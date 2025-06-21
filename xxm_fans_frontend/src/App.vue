@@ -1,30 +1,54 @@
 <script setup>
-import HelloWorld from './components/HelloWorld.vue'
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
+const activeIndex = ref('1')
+
+const handleSelect = (key) => {
+  router.push(key)
+}
 </script>
 
 <template>
-  <div>
-    <a href="https://vite.dev" target="_blank">
-      <img src="/vite.svg" class="logo" alt="Vite logo" />
-    </a>
-    <a href="https://vuejs.org/" target="_blank">
-      <img src="./assets/vue.svg" class="logo vue" alt="Vue logo" />
-    </a>
-  </div>
-  <HelloWorld msg="Vite + Vue" />
-</template>
+  <el-container style="min-height: 100vh;">
 
-<style scoped>
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.vue:hover {
-  filter: drop-shadow(0 0 2em #42b883aa);
-}
-</style>
+    <!-- 顶部固定导航 -->
+    <el-header
+      style="
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        width: 100%;
+        z-index: 1000;
+        background-color: white;
+        display: flex;
+        padding: 0;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      "
+    >
+      <el-menu
+        :default-active="activeIndex"
+        mode="horizontal"
+        @select="handleSelect"
+        style="flex: 1;"
+      >
+        <el-menu-item index="/songs">Processing Center</el-menu-item>
+        <el-sub-menu index="2">
+          <template #title>Workspace</template>
+          <el-menu-item index="/w1">item one</el-menu-item>
+          <el-menu-item index="/w2">item two</el-menu-item>
+        </el-sub-menu>
+        <el-menu-item index="/info" disabled>Info</el-menu-item>
+        <el-menu-item index="/orders">Orders</el-menu-item>
+      </el-menu>
+    </el-header>
+
+    <!-- 主体区域 -->
+    <el-main style="padding-top: 60px;">
+      <router-view />
+    </el-main>
+
+  </el-container>
+</template>
