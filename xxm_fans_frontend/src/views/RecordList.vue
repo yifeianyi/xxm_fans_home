@@ -8,6 +8,10 @@ const props = defineProps({
     type: Number,
     required: true,
   },
+  songName:{
+    type: String,
+    required: true
+  }
 })
 
 // ✅ 弹窗状态
@@ -56,8 +60,8 @@ onMounted(fetchRecords)
   <!-- ✅ 视频弹窗 -->
   <el-dialog
     v-model="showDialog"
-    title="播放视频"
-    width="80%"
+    :title="props.songName"
+    width="60%"
     destroy-on-close
     :before-close="() => (showDialog = false)"
     class="video-dialog"

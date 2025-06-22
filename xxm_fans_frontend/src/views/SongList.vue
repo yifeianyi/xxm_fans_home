@@ -50,7 +50,10 @@ watch(curPage, fetchSongs)
       <!-- 展开列 -->
       <el-table-column type="expand" label="演唱记录" width="120">
         <template #default="props">
-            <RecordList :song-id="props.row.id" />
+            <RecordList 
+                :song-id="props.row.id" 
+                :song-name="props.row.song_name"
+            />
         </template>
     </el-table-column>
 
