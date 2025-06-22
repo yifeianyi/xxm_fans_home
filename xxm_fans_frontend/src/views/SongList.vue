@@ -68,12 +68,20 @@ watch(curPage, fetchSongs)
   </div>
 </template>
 
-
 <style scoped>
+
 .song-list-container {
+  position: relative;
+  z-index: 1;
   padding: 20px;
   max-width: 1000px;
   margin: 0 auto;
   text-align: center;
+  background-color: transparent; /* 防止遮住弹窗 */
+}
+
+.video-dialog {
+  max-width: 960px;
+  z-index: 99999 !important;
 }
 </style>

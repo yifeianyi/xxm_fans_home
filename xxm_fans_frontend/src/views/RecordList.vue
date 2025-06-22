@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
+import { ElMessage } from 'element-plus'
 
 const props = defineProps({
   songId: {
@@ -8,6 +9,20 @@ const props = defineProps({
     required: true,
   },
 })
+
+// ✅ 弹窗状态
+const showDialog = ref(false)
+const currentUrl = ref('')
+
+// ✅ 播放弹窗
+const openPlayer = (url) => {
+  if (!url) {
+    ElMessage.warning('暂无视频链接')
+    return
+  }
+  currentUrl.value = url
+  showDialog.value = true
+}
 
 // ✅ 缓存机制：静态全局变量
 const recordCache = new Map()
@@ -38,6 +53,26 @@ onMounted(fetchRecords)
 </script>
 
 <template>
+  <!-- ✅ 视频弹窗 -->
+  <el-dialog
+    v-model="showDialog"
+    title="播放视频"
+    width="80%"
+    destroy-on-close
+    :before-close="() => (showDialog = false)"
+    class="video-dialog"
+  >
+    <div class="video-wrapper">
+      <iframe
+        v-if="currentUrl"
+        :src="currentUrl"
+        frameborder="0"
+        allowfullscreen
+      ></iframe>
+    </div>
+  </el-dialog>
+
+
   <div style="padding: 10px 30px">
     <div v-if="loading" style="text-align: center; color: #666;">加载中...</div>
     <div v-else-if="records && records.length > 0">
@@ -47,8 +82,8 @@ onMounted(fetchRecords)
           :key="index"
           class="record-card"
         >
-          <div class="record-time">
-            <a :href="record.url" target="_blank">▶ {{ record.performed_at }}</a>
+          <div class="record-time clickable" @click="openPlayer(record.url)">
+            ▶ {{ record.performed_at }}
           </div>
           <div class="record-notes">{{ record.notes || '' }}</div>
         </div>
@@ -58,9 +93,42 @@ onMounted(fetchRecords)
       暂无演唱记录
     </div>
   </div>
+
+
 </template>
 
 <style scoped>
+/* dialog 提高优先级 */
+.video-dialog {
+  max-width: 960px;
+  z-index: 99999 !important;
+}
+
+.video-wrapper {
+  position: relative;
+  width: 100%;
+  padding-top: 56.25%; /* 16:9 比例 */
+  background-color: black;
+}
+
+.video-wrapper iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+.clickable {
+  cursor: pointer;
+  color: #409EFF;
+  font-weight: bold;
+}
+.clickable:hover {
+  text-decoration: underline;
+}
+
 .record-card-list {
   display: flex;
   flex-wrap: wrap;
@@ -81,16 +149,6 @@ onMounted(fetchRecords)
   box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-.record-time a {
-  font-weight: bold;
-  color: #409EFF;
-  text-decoration: none;
-}
-
-.record-time a:hover {
-  text-decoration: underline;
-}
-
 .record-notes {
   margin-top: 6px;
   font-size: 13px;
@@ -98,3 +156,20 @@ onMounted(fetchRecords)
   white-space: pre-line;
 }
 </style>
+
+<style>
+/* ✅ 全局覆盖 el-dialog 的遮罩层和主体 z-index */
+.el-overlay {
+  z-index: 9999 !important;
+}
+.el-overlay .el-dialog {
+  z-index: 10000 !important;
+}
+
+/* ✅ 去除 el-dialog 默认的白色背景和 padding */
+.el-dialog__body {
+  padding: 0 !important;
+  background-color: transparent !important;
+}
+</style>
+
