@@ -8,7 +8,13 @@ const routes = [
     {
         path: '/',
         redirect: '/songs'//默认跳转到歌单页
+
     },
+    // {
+    //     path: '/songs',
+    //     name: 'SongTabs',
+    //     component: () => import('@/views/SongTabs.vue')
+    // },
     {
         path: '/songs',
         name: 'SongList',
