@@ -41,11 +41,19 @@ watch(curPage, fetchSongs)
       fit
       style="width: 100%" 
     >
-      <el-table-column prop="id" label="No" min-width="80" align="center" header-align="center" />
-      <el-table-column prop="song_name" label="歌曲名" min-width="130" align="center" header-align="center" />
-      <el-table-column prop="singer" label="歌手" min-width="100" align="center" header-align="center" />
-      <el-table-column prop="last_performed" label="最近一次演唱" min-width="140" align="center" header-align="center" />
-      <el-table-column prop="perform_count" label="演唱次数" min-width="100" align="center" header-align="center" />
+        <el-table-column prop="id" label="No" min-width="80" align="center" header-align="center" />
+        <el-table-column prop="song_name" label="歌曲名" min-width="130" align="center" header-align="center" />
+        <el-table-column prop="singer" label="歌手" min-width="100" align="center" header-align="center" />
+        <el-table-column label="曲风" width="120" min-width="80" align="center" header-align="center">
+            <template #default="{ row }">
+                <span v-if="row.styles && row.styles.length > 0">
+                {{ row.styles.join('、') }}
+                </span>
+                <span v-else>暂无</span>
+            </template>
+        </el-table-column>
+        <el-table-column prop="last_performed" label="最近一次演唱" min-width="140" align="center" header-align="center" />
+        <el-table-column prop="perform_count" label="演唱次数" min-width="100" align="center" header-align="center" />
 
       <!-- 展开列 -->
       <el-table-column type="expand" label="演唱记录" width="120">

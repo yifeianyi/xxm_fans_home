@@ -65,6 +65,8 @@ onMounted(fetchRecords)
     destroy-on-close
     :before-close="() => (showDialog = false)"
     class="video-dialog"
+    append-to-body      
+    :lock-scroll="true" 
   >
     <div class="video-wrapper">
       <iframe
@@ -102,12 +104,6 @@ onMounted(fetchRecords)
 </template>
 
 <style scoped>
-/* dialog 提高优先级 */
-.video-dialog {
-  max-width: 960px;
-  z-index: 99999 !important;
-}
-
 .video-wrapper {
   position: relative;
   width: 100%;
@@ -136,14 +132,14 @@ onMounted(fetchRecords)
 .record-card-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 13px;
 }
 
 .record-card {
   border: 1px solid #ddd;
   border-radius: 8px;
   padding: 12px 16px;
-  width: calc(33.333% - 12px);
+  width: calc(25% - 12px);
   box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.05);
   background-color: #fafafa;
   transition: box-shadow 0.3s;
@@ -162,18 +158,22 @@ onMounted(fetchRecords)
 </style>
 
 <style>
-/* ✅ 全局覆盖 el-dialog 的遮罩层和主体 z-index */
-.el-overlay {
-  z-index: 9999 !important;
-}
-.el-overlay .el-dialog {
-  z-index: 10000 !important;
+/* ✅ 修复 el-dialog 遮罩未遮挡问题 */
+.el-overlay-dialog {
+  z-index: 3000 !important;
 }
 
-/* ✅ 去除 el-dialog 默认的白色背景和 padding */
+/* ✅ 修复 el-dialog__body 透明导致底部内容“透出” */
 .el-dialog__body {
   padding: 0 !important;
-  background-color: transparent !important;
+  background-color: #fff !important;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+/* ✅ 修复下层 song-list 内容层级太高的问题（视需要添加） */
+.song-list-container {
+  z-index: auto !important;
+  position: relative;
 }
 </style>
-
