@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
 import { ElMessage } from 'element-plus'
+import VideoPlayerDialog from '../components/VideoPlayerDialog.vue'  // ✅ 引入封装组件
 
 const props = defineProps({
   songId: {
@@ -15,7 +16,7 @@ const props = defineProps({
 })
 
 // ✅ 弹窗状态
-const showDialog = ref(false)
+const showPlayer = ref(false)
 const currentUrl = ref('')
 
 // ✅ 播放弹窗
@@ -25,12 +26,11 @@ const openPlayer = (url) => {
     return
   }
   currentUrl.value = url
-  showDialog.value = true
+  showPlayer.value = true
 }
 
 // ✅ 缓存机制：静态全局变量
 const recordCache = new Map()
-
 const records = ref(null)
 const loading = ref(false)
 
@@ -57,28 +57,6 @@ onMounted(fetchRecords)
 </script>
 
 <template>
-  <!-- ✅ 视频弹窗 -->
-  <el-dialog
-    v-model="showDialog"
-    :title="props.songName"
-    width="60%"
-    destroy-on-close
-    :before-close="() => (showDialog = false)"
-    class="video-dialog"
-    append-to-body      
-    :lock-scroll="true" 
-  >
-    <div class="video-wrapper">
-      <iframe
-        v-if="currentUrl"
-        :src="currentUrl"
-        frameborder="0"
-        allowfullscreen
-      ></iframe>
-    </div>
-  </el-dialog>
-
-
   <div style="padding: 10px 30px">
     <div v-if="loading" style="text-align: center; color: #666;">加载中...</div>
     <div v-else-if="records && records.length > 0">
@@ -100,6 +78,11 @@ onMounted(fetchRecords)
     </div>
   </div>
 
+  <VideoPlayerDialog
+    v-model:visible="showPlayer"
+    :url="currentUrl"
+    :songName="props.songName"
+  />
 
 </template>
 

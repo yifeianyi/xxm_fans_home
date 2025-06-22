@@ -32,7 +32,6 @@ watch(curPage, fetchSongs)
 
 <template>
   <div class="song-list-container">
-    <h2>歌曲列表</h2>
 
     <el-table
       :data="songs"
@@ -80,7 +79,6 @@ watch(curPage, fetchSongs)
 </template>
 
 <style scoped>
-
 .song-list-container {
   position: relative;
   z-index: 1;
