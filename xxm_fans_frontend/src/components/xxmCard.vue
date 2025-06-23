@@ -6,7 +6,9 @@
 </template>
 
 <script setup>
-const avatarUrl = '/src/assets/xxmHeader.jpg'  // ✅ 你的头像路径
+//const avatarUrl = '/src/assets/xxmHeader.jpg'  // ✅ 你的头像路径
+// import avatar from '@/assets/xxmHeader.jpg'  // ✅ 让 Vite 识别、打包
+const avatarUrl = '/images/xxmHeader.jpg'
 const username = '咻咻满'
 // const description = 'test'
 </script>
