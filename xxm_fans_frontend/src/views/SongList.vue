@@ -11,14 +11,14 @@ const query = ref('')
 // 获取分页歌曲数据
 const fetchSongs = async () => {
   try {
-    const res = await axios.get('/api/songs', {
-      params: {
+    const params ={
         q: query.value,
         page: curPage.value,
         limit: pageSize,
         styles: selectedStyles.value.join(','),  // ✅ 添加这行
       }
-    })
+    // console.log('✅ 请求参数:', params)
+    const res = await axios.get('/api/songs', {params})
     songs.value = res.data.results
     total.value = res.data.total
   } catch (err) {
@@ -41,8 +41,9 @@ const loadStyleOptions = async () => {
 
 
 onMounted( ()=>{
+    fetchSongs()
   loadStyleOptions()
-  fetchSongs()
+  
 })
 watch(curPage, fetchSongs)
 
@@ -98,7 +99,7 @@ watch(curPage, fetchSongs)
     >
         <el-table-column prop="id" label="No" min-width="80" align="center" header-align="center" />
         <el-table-column prop="song_name" label="歌曲名" min-width="130" align="center" header-align="center" />
-        <el-table-column prop="singer" label="歌手" min-width="100" align="center" header-align="center" />
+        <el-table-column prop="singer" label="原唱" min-width="100" align="center" header-align="center" />
         <el-table-column label="曲风" width="120" min-width="80" align="center" header-align="center">
             <template #default="{ row }">
                 <span v-if="row.styles && row.styles.length > 0">
