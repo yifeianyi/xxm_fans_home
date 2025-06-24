@@ -2,24 +2,24 @@
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
 import { ElMessage } from 'element-plus'
-import VideoPlayerDialog from '../components/VideoPlayerDialog.vue'  // ✅ 引入封装组件
+import VideoPlayerDialog from '../components/VideoPlayerDialog.vue'
 
 const props = defineProps({
   songId: {
     type: Number,
     required: true,
   },
-  songName:{
+  songName: {
     type: String,
     required: true
   }
 })
 
-// ✅ 弹窗状态
+// 弹窗状态
 const showPlayer = ref(false)
 const currentUrl = ref('')
 
-// ✅ 播放弹窗
+// 播放弹窗
 const openPlayer = (url) => {
   if (!url) {
     ElMessage.warning('暂无视频链接')
@@ -29,7 +29,7 @@ const openPlayer = (url) => {
   showPlayer.value = true
 }
 
-// ✅ 缓存机制：静态全局变量
+// 缓存机制
 const recordCache = new Map()
 const records = ref(null)
 const loading = ref(false)
@@ -52,6 +52,9 @@ const fetchRecords = async () => {
     loading.value = false
   }
 }
+const getFullCoverUrl = (relativePath) => {
+  return 'http://192.168.0.102:8000' + relativePath
+}
 
 onMounted(fetchRecords)
 </script>
@@ -66,6 +69,15 @@ onMounted(fetchRecords)
           :key="index"
           class="record-card"
         >
+          <!-- ✅ 封面图 -->
+          <img
+            v-if="record.cover_url"
+            :src="getFullCoverUrl(record.cover_url)"
+            alt="cover"
+            class="record-cover"
+            @error="e => (e.target.style.display = 'none')"
+          />
+
           <div class="record-time clickable" @click="openPlayer(record.url)">
             ▶ {{ record.performed_at }}
           </div>
@@ -83,14 +95,13 @@ onMounted(fetchRecords)
     :url="currentUrl"
     :songName="props.songName"
   />
-
 </template>
 
 <style scoped>
 .video-wrapper {
   position: relative;
   width: 100%;
-  padding-top: 56.25%; /* 16:9 比例 */
+  padding-top: 56.25%;
   background-color: black;
 }
 
@@ -138,15 +149,21 @@ onMounted(fetchRecords)
   color: #333;
   white-space: pre-line;
 }
+
+.record-cover {
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
 </style>
 
 <style>
-/* ✅ 修复 el-dialog 遮罩未遮挡问题 */
 .el-overlay-dialog {
   z-index: 3000 !important;
 }
 
-/* ✅ 修复 el-dialog__body 透明导致底部内容“透出” */
 .el-dialog__body {
   padding: 0 !important;
   background-color: #fff !important;
@@ -154,7 +171,6 @@ onMounted(fetchRecords)
   overflow-y: auto;
 }
 
-/* ✅ 修复下层 song-list 内容层级太高的问题（视需要添加） */
 .song-list-container {
   z-index: auto !important;
   position: relative;
