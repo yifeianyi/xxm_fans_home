@@ -53,7 +53,10 @@ const fetchRecords = async () => {
   }
 }
 const getFullCoverUrl = (relativePath) => {
-  return 'http://192.168.0.102:8000' + relativePath
+    const performedAt = record?.performed_at
+    if (!performedAt) return '/cover/default.jpg'
+    return `/cover/${performedAt}.jpg`
+//   return 'http://192.168.0.102:8000' + relativePath
 }
 
 onMounted(fetchRecords)
@@ -70,13 +73,20 @@ onMounted(fetchRecords)
           class="record-card"
         >
           <!-- ✅ 封面图 -->
-          <img
+            <img
+            v-if="record.cover_url"
+            :src="record.cover_url"
+            alt="cover"
+            class="record-cover"
+            @error="e => (e.target.src = '/covers/default.jpg')"
+            />
+          <!-- <img
             v-if="record.cover_url"
             :src="getFullCoverUrl(record.cover_url)"
             alt="cover"
             class="record-cover"
             @error="e => (e.target.style.display = 'none')"
-          />
+          /> -->
 
           <div class="record-time clickable" @click="openPlayer(record.url)">
             ▶ {{ record.performed_at }}

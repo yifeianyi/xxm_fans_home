@@ -167,7 +167,7 @@ function copySongName(name) {
       stripe
       border
       fit
-      style="width: 100%"
+      style="width: 100%" 
       @sort-change="handleSortChange"
     >
         <!-- 移除No字段 -->
