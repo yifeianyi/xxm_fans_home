@@ -8,7 +8,7 @@ export default defineConfig({
         port: 5173,
         proxy: {
             '/api': {
-                target: 'http://192.168.0.102:8000', // ✅ 改成你电脑的局域网 IP（不是 localhost）
+                target: 'http://127.0.0.1:8000', // ✅ 改成你电脑的局域网 IP（不是 localhost）
                 changeOrigin: true,
                 rewrite: (path) => path.replace(/^\/api/, '/api')
             }
