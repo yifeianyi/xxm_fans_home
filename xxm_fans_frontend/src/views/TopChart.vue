@@ -22,8 +22,8 @@ const fetchTopSongs = async () => {
   loading.value = true
   try {
     // 假设后端支持 /api/top_songs?range=xxx
-    const res = await axios.get('/api/top_songs', { params: { range: timeRange.value } })
-    topSongs.value = res.data.slice(0, 10) // 只取前10
+    const res = await axios.get('/api/top_songs', { params: { range: timeRange.value, limit: 15 } })
+    topSongs.value = res.data
   } catch (err) {
     topSongs.value = []
   } finally {
