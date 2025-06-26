@@ -5,14 +5,14 @@
       <div
         class="tab-item"
         :class="{ active: activeTab === 'top' }"
-        @click="activeTab = 'top'"
+        @click="switchTab('top')"
       >
         热歌榜
       </div>
       <div
         class="tab-item"
         :class="{ active: activeTab === 'songs' }"
-        @click="activeTab = 'songs'"
+        @click="switchTab('songs')"
       >
         歌单
       </div>
@@ -27,13 +27,32 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 
 // ✅ 直接引用两个页面
 import TopChart from './TopChart.vue'
 import SongList from './SongList.vue'
 
+const route = useRoute()
+const router = useRouter()
 const activeTab = ref('songs')
+
+// 路由参数控制标签页
+watch(
+  () => route.query.tab,
+  (val) => {
+    if (val === 'top' || val === 'songs') {
+      activeTab.value = val
+    }
+  },
+  { immediate: true }
+)
+
+function switchTab(tab) {
+  activeTab.value = tab
+  router.replace({ query: { ...route.query, tab } })
+}
 </script>
 
 <style scoped>
@@ -67,7 +86,7 @@ const activeTab = ref('songs')
 .tab-content {
   padding: 20px;
   border-radius: 12px;
-  background-color: #fff;
+  background-color: rgba(255,255,255,0.7);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 </style>

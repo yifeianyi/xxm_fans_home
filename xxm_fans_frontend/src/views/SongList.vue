@@ -2,12 +2,17 @@
 import { ref, onMounted, watch } from 'vue'
 import axios from 'axios'
 import RecordList from './RecordList.vue'
+import { useRoute, useRouter } from 'vue-router'
+import { ElNotification, ElMessage } from 'element-plus'
 
 const songs = ref([])
 const total = ref(0)
 const curPage = ref(1)
 const pageSize = 50
 const query = ref('')
+const sortField = ref('')
+const sortOrder = ref('')
+
 // 获取分页歌曲数据
 const fetchSongs = async () => {
   try {
@@ -15,9 +20,11 @@ const fetchSongs = async () => {
         q: query.value,
         page: curPage.value,
         limit: pageSize,
-        styles: selectedStyles.value.join(','),  // ✅ 添加这行
+        styles: selectedStyles.value.join(','),
       }
-    // console.log('✅ 请求参数:', params)
+    if(sortField.value && sortOrder.value) {
+      params.ordering = (sortOrder.value === 'descending' ? '-' : '') + sortField.value
+    }
     const res = await axios.get('/api/songs', {params})
     songs.value = res.data.results
     total.value = res.data.total
@@ -30,6 +37,9 @@ const selectedStyles = ref([])
 
 // ✅ 可供选择的曲风列表
 const styleOptions = ref([])
+const route = useRoute()
+const router = useRouter()
+
 const loadStyleOptions = async () => {
   try {
     const res = await axios.get('/api/styles')
@@ -39,16 +49,78 @@ const loadStyleOptions = async () => {
   }
 }
 
-
-onMounted( ()=>{
+const handleSortChange = ({ prop, order }) => {
+  // 只支持指定字段
+  if(['singer','last_performed','perform_count'].includes(prop)) {
+    sortField.value = prop
+    sortOrder.value = order
+    curPage.value = 1
     fetchSongs()
+  }
+}
+
+onMounted(() => {
   loadStyleOptions()
-  
+  // 路由参数自动填充搜索
+  if (route.query.q) {
+    query.value = route.query.q
+    fetchSongs()
+  } else {
+    fetchSongs()
+  }
 })
 watch(curPage, fetchSongs)
+// 监听路由变化，支持外部跳转
+watch(
+  () => route.query.q,
+  (val) => {
+    if (val !== undefined) {
+      query.value = val
+      fetchSongs()
+    }
+  }
+)
 
-
-
+function copySongName(name) {
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(name)
+      .then(() => {
+        ElNotification({
+          message: '已复制歌曲名：' + name,
+          type: 'success',
+          customClass: 'copy-message-card',
+          duration: 1800,
+          showClose: false,
+          offset: 40,
+          position: 'top-right'
+        })
+      })
+      .catch(() => {
+        ElMessage.error('复制失败')
+      })
+  } else {
+    // 兼容旧浏览器
+    const input = document.createElement('input')
+    input.value = name
+    document.body.appendChild(input)
+    input.select()
+    try {
+      document.execCommand('copy')
+      ElNotification({
+        message: '已复制歌曲名：' + name,
+        type: 'success',
+        customClass: 'copy-message-card',
+        duration: 1800,
+        showClose: false,
+        offset: 40,
+        position: 'top-right'
+      })
+    } catch {
+      ElMessage.error('复制失败')
+    }
+    document.body.removeChild(input)
+  }
+}
 </script>
 
 
@@ -95,11 +167,17 @@ watch(curPage, fetchSongs)
       stripe
       border
       fit
-      style="width: 100%" 
+      style="width: 100%"
+      @sort-change="handleSortChange"
     >
-        <el-table-column prop="id" label="No" min-width="80" align="center" header-align="center" />
-        <el-table-column prop="song_name" label="歌曲名" min-width="130" align="center" header-align="center" />
-        <el-table-column prop="singer" label="原唱" min-width="100" align="center" header-align="center" />
+        <!-- 移除No字段 -->
+        <!-- <el-table-column prop="id" label="No" min-width="80" align="center" header-align="center" /> -->
+        <el-table-column prop="song_name" label="歌曲名" min-width="130" align="center" header-align="center">
+          <template #default="{ row }">
+            <span class="copy-song-name" @click="copySongName(row.song_name)">{{ row.song_name }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="singer" label="原唱" min-width="100" align="center" header-align="center" sortable />
         <el-table-column label="曲风" width="120" min-width="80" align="center" header-align="center">
             <template #default="{ row }">
                 <span v-if="row.styles && row.styles.length > 0">
@@ -108,8 +186,8 @@ watch(curPage, fetchSongs)
                 <span v-else>暂无</span>
             </template>
         </el-table-column>
-        <el-table-column prop="last_performed" label="最近一次演唱" min-width="140" align="center" header-align="center" />
-        <el-table-column prop="perform_count" label="演唱次数" min-width="100" align="center" header-align="center" />
+        <el-table-column prop="last_performed" label="最近一次演唱" min-width="140" align="center" header-align="center" sortable />
+        <el-table-column prop="perform_count" label="演唱次数" min-width="100" align="center" header-align="center" sortable />
 
       <!-- 展开列 -->
       <el-table-column type="expand" label="演唱记录" width="120">
@@ -147,7 +225,7 @@ watch(curPage, fetchSongs)
   max-width: 1000px;
   margin: 0 auto;
   text-align: center;
-  background-color: transparent; /* 防止遮住弹窗 */
+  background-color: transparent !important; /* 全透明背景 */
 }
 
 .video-dialog {
@@ -169,7 +247,7 @@ watch(curPage, fetchSongs)
   align-items: center;
   gap: 10px;
   border-radius: 8px;
-  background-color: #ffffffbb; /* 半透明白背景，可选 */
+  background-color: transparent !important; /* 全透明背景 */
 }
 
 /* 控制复选框一行显示多个 */
@@ -180,5 +258,32 @@ watch(curPage, fetchSongs)
   gap: 10px;
 }
 
+.el-pagination {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
 
+.copy-song-name {
+  cursor: pointer;
+  color: inherit;
+  text-decoration: none;
+}
+.copy-song-name:hover {
+  color: inherit;
+}
+
+.copy-message-card {
+  border: 2px solid #222;
+  border-radius: 12px;
+  background: #fff;
+  color: #222;
+  font-size: 20px;
+  font-weight: 500;
+  box-shadow: 0 4px 18px rgba(0,0,0,0.10);
+  padding: 18px 36px;
+  min-width: 180px;
+  max-width: 420px;
+  text-align: center;
+}
 </style>
