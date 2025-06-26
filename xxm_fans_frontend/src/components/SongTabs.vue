@@ -31,8 +31,9 @@ import { ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 // ✅ 直接引用两个页面
-import TopChart from './TopChart.vue'
-import SongList from './SongList.vue'
+// import TopChart from './TopChart.vue'
+import SongList from '../views/SongList.vue'
+import TopChart from '../views/TopChart.vue'
 
 const route = useRoute()
 const router = useRouter()

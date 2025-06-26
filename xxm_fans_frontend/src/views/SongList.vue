@@ -4,6 +4,7 @@ import axios from 'axios'
 import RecordList from './RecordList.vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElNotification, ElMessage } from 'element-plus'
+import SongTabs from '../components/SongTabs.vue'
 
 const songs = ref([])
 const total = ref(0)
@@ -126,6 +127,7 @@ function copySongName(name) {
 
 
 <template>
+    <!-- <SongTabs /> -->
   <div class="song-list-container">
   <!-- ✅ 筛选区域 -->
     <div class="filter-bar">
@@ -141,7 +143,7 @@ function copySongName(name) {
       <el-checkbox
         v-for="style in styleOptions"
         :key="style"
-        :label="style"
+        :value="style"
       >
         {{ style }}
       </el-checkbox>
