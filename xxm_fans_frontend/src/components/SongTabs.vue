@@ -1,27 +1,22 @@
 <template>
   <div class="song-tabs-wrapper">
-    <!-- 标签页 -->
-    <div class="tab-header">
+    <div class="custom-tabs">
       <div
-        class="tab-item"
+        class="tab-btn"
         :class="{ active: activeTab === 'top' }"
         @click="switchTab('top')"
-      >
-        热歌榜
-      </div>
+      >热歌榜</div>
       <div
-        class="tab-item"
+        class="tab-btn"
         :class="{ active: activeTab === 'songs' }"
         @click="switchTab('songs')"
-      >
-        歌单
-      </div>
+      >满的歌声</div>
     </div>
-
-    <!-- 内容区域 -->
-    <div class="tab-content">
-      <TopChart v-if="activeTab === 'top'" />
-      <SongList v-else />
+    <div class="card-content-bg">
+      <div class="tab-content">
+        <TopChart v-if="activeTab === 'top'" />
+        <SongList v-else />
+      </div>
     </div>
   </div>
 </template>
@@ -58,36 +53,48 @@ function switchTab(tab) {
 
 <style scoped>
 .song-tabs-wrapper {
-  max-width: 1000px;
+  max-width: 1200px;
   margin: 0 auto;
+  padding: 20px 20px 40px 20px;
+  position: relative;
+  background: transparent;
 }
-
-.tab-header {
+.custom-tabs {
   display: flex;
-  justify-content: center;
-  margin: 20px 0;
+  background: #fff;
+  border-bottom: 1px solid #f0f0f0;
+  border-radius: 22px;
+  margin-bottom: 10px;
 }
-
-.tab-item {
-  padding: 10px 30px;
-  margin: 0 8px;
-  border-radius: 30px;
-  background-color: #f0f0f0;
-  color: #555;
+.tab-btn {
+  flex: 1;
+  height: 44px;
+  font-size: 15px;
   font-weight: bold;
+  color: #333;
+  background: #fff;
+  border: none;
+  outline: none;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: background 0.2s, color 0.2s;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 22px;
 }
-
-.tab-item.active {
-  background-color: #fda5c1;
-  color: white;
+.tab-btn.active {
+  background: #fda5c1;
+  color: #fff;
 }
-
+.card-content-bg {
+  background: transparent;
+  border-radius: 20px;
+  width: 100%;
+}
 .tab-content {
-  padding: 20px;
-  border-radius: 12px;
-  background-color: rgba(255,255,255,0.7);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  padding: 32px;
+  min-height: 300px;
+  background-color: rgb(250, 250, 250,0.7);
 }
 </style>

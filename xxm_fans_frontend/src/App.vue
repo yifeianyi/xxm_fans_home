@@ -1,6 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import NavBar from './components/NavBar.vue'
 import xxmCard from './components/xxmCard.vue' 
 const router = useRouter()
 const activeIndex = ref('1')
@@ -11,17 +12,12 @@ const handleSelect = (key) => {
 </script>
 
 <template>
-<xxmCard />
-    <!-- <el-header>
-        
-    </el-header>
-     -->
+  <NavBar />
+  <!-- <xxmCard /> -->
   <el-container style="min-height: 100vh;">
-    <!-- 主体区域 -->
-    <el-main style="padding-top: 60px;">
+    <el-main style="padding-top: 70px;">
       <router-view />
     </el-main>
-
   </el-container>
 </template>
 <style>

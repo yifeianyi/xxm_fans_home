@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 
 // 导入页面组件
 import SongTabs from '../components/SongTabs.vue'
+import Footprint from '../views/Footprint.vue'
 
 const routes = [
     {
@@ -12,6 +13,11 @@ const routes = [
         path: '/songs',
         name: 'SongTabs',
         component: SongTabs
+    },
+    {
+        path: '/footprint',
+        name: 'Footprint',
+        component: Footprint
     }
 ]
 
