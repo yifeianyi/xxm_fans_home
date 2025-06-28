@@ -43,8 +43,8 @@ const fetchRecords = async () => {
   loading.value = true
   try {
     const res = await axios.get(`/api/songs/${props.songId}/records`)
-    records.value = res.data
-    recordCache.set(props.songId, res.data)
+    records.value = res.data.results || res.data
+    recordCache.set(props.songId, records.value)
   } catch (err) {
     console.error(`❌ 获取演唱记录失败（id=${props.songId}）:`, err)
     records.value = []
