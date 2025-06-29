@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import MonthCalendar from '../components/MonthCalendar.vue'
 import WorkTimeline from '../components/WorkTimeline.vue'
+import WorkCollectionList from '../components/WorkCollectionList.vue'
 const activeTab = ref('calendar')
 
 // 日历组件
@@ -67,6 +68,7 @@ const weeks = computed(() => {
         </div>
         <div v-else-if="activeTab === 'creative'">
           <!-- 精选二创内容区域 -->
+          <WorkCollectionList />
         </div>
       </div>
     </div>

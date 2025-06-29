@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, watch } from 'vue'
 import axios from 'axios'
 import { ElMessage } from 'element-plus'
 import VideoPlayerDialog from '../components/VideoPlayerDialog.vue'
@@ -15,11 +15,13 @@ const props = defineProps({
   }
 })
 
-// 弹窗状态
 const showPlayer = ref(false)
 const currentUrl = ref('')
+const records = ref(null)
+const loading = ref(false)
 
-// 播放弹窗
+const recordCache = ref({})  // 替代 Map
+
 const openPlayer = (url) => {
   if (!url) {
     ElMessage.warning('暂无视频链接')
@@ -29,14 +31,10 @@ const openPlayer = (url) => {
   showPlayer.value = true
 }
 
-// 缓存机制
-const recordCache = new Map()
-const records = ref(null)
-const loading = ref(false)
-
 const fetchRecords = async () => {
-  if (recordCache.has(props.songId)) {
-    records.value = recordCache.get(props.songId)
+  const cache = recordCache.value[props.songId]
+  if (cache) {
+    records.value = cache
     return
   }
 
@@ -44,7 +42,7 @@ const fetchRecords = async () => {
   try {
     const res = await axios.get(`/api/songs/${props.songId}/records`)
     records.value = res.data.results || res.data
-    recordCache.set(props.songId, records.value)
+    recordCache.value[props.songId] = records.value
   } catch (err) {
     console.error(`❌ 获取演唱记录失败（id=${props.songId}）:`, err)
     records.value = []
@@ -52,15 +50,13 @@ const fetchRecords = async () => {
     loading.value = false
   }
 }
-const getFullCoverUrl = (relativePath) => {
-    const performedAt = record?.performed_at
-    if (!performedAt) return '/cover/default.jpg'
-    return `/cover/${performedAt}.jpg`
-//   return 'http://192.168.0.102:8000' + relativePath
-}
 
-onMounted(fetchRecords)
+// 立即监听 props.songId
+watch(() => props.songId, (newId) => {
+  if (newId) fetchRecords()
+}, { immediate: true })
 </script>
+
 
 <template>
   <div style="padding: 10px 30px">
@@ -80,13 +76,6 @@ onMounted(fetchRecords)
             class="record-cover"
             @error="e => (e.target.src = '/covers/default.jpg')"
             />
-          <!-- <img
-            v-if="record.cover_url"
-            :src="getFullCoverUrl(record.cover_url)"
-            alt="cover"
-            class="record-cover"
-            @error="e => (e.target.style.display = 'none')"
-          /> -->
 
           <div class="record-time clickable" @click="openPlayer(record.url)">
             ▶ {{ record.performed_at }}
