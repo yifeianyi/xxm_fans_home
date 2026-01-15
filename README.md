@@ -106,12 +106,8 @@ xxm_fans_home/
 │   │   ├── templates/     # Django模板
 │   │   ├── logs/          # 日志文件
 │   │   ├── covers/        # 封面图片（符号链接）
-│   │   ├── db.sqlite3     # 主数据库
-│   │   ├── songlist.sqlite3 # 歌单数据库
-│   │   ├── view_data.sqlite3 # 数据分析数据库
 │   │   ├── .env           # 环境变量配置（软链接到 env/backend.env）
 │   │   ├── manage.py      # Django管理脚本
-│   │   └── run_dev_server.sh # 开发服务器启动脚本
 │   └── xxm_fans_frontend/  # React前端项目
 │       ├── domain/        # 领域层（业务模型和服务接口）
 │       ├── infrastructure/ # 基础设施层（API实现和配置）
@@ -156,7 +152,7 @@ xxm_fans_home/
 
 ```bash
 # 1. 创建软链接
-cd /home/yifeianyi/Desktop/xxm_fans_home/scripts
+cd /path/xxm_fans_home/scripts
 ./create_symlinks.sh
 
 # 2. 启动开发环境服务
@@ -175,7 +171,7 @@ cd /home/yifeianyi/Desktop/xxm_fans_home/scripts
 
 ```bash
 # 1. 创建软链接
-cd /home/yifeianyi/Desktop/xxm_fans_home/scripts
+cd /path/xxm_fans_home/scripts
 ./create_symlinks.sh
 
 # 2. 创建基础设施软链接（可选，需要 root 权限）
@@ -196,7 +192,7 @@ sudo ./create_infra_symlinks.sh
 ### 集成测试
 
 ```bash
-cd /home/yifeianyi/Desktop/xxm_fans_home/scripts
+cd /path/xxm_fans_home/scripts
 ./test_integration.sh
 ```
 
@@ -699,8 +695,6 @@ export DJANGO_ALLOWED_HOSTS='your-domain.com'
 ### 功能文档
 
 位于 `doc/` 目录：
-
-
 
 - `BV号导入视频标题格式说明.md` - BV号导入功能详细说明
 
