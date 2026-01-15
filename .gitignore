@@ -1,1 +1,6 @@
-repo/*
+venv/*
+media/*
+static/*
+log/*
+data/*
+IFLOW.md

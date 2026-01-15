@@ -1,6 +1,7 @@
-[submodule "repo/xxm_fans_backup"]
-	path = repo/xxm_fans_backup
-	url = ./repo/xxm_fans_backup/
+[submodule "repo/xxm_fans_backend"]
+	path = repo/xxm_fans_backend
+	url = git@github.com:yifeianyi/xxm_fans_backend.git
+
 [submodule "repo/xxm_fans_frontend"]
 	path = repo/xxm_fans_frontend
-	url = ./repo/xxm_fans_frontend/
+	url = git@github.com:yifeianyi/xxm_fans_frontend.git
