@@ -1,6 +1,6 @@
 venv/*
 media/*
 static/*
-log/*
+logs/*
 data/*
 IFLOW.md
