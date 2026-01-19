@@ -1,0 +1,93 @@
+[
+  {
+    "bvid": "BV1CdrsBjEP1",
+    "is_valid": true,
+    "log": [
+      {
+        "status": "success",
+        "message": "成功获取数据: 播放503683, 弹幕1525, 评论1051, 点赞26110, 投币9805, 收藏12403",
+        "timestamp": "2026-01-19 19:23:27"
+      },
+      {
+        "status": "success",
+        "message": "成功获取数据: 播放503704, 弹幕1525, 评论1051, 点赞26110, 投币9805, 收藏12403",
+        "timestamp": "2026-01-19 19:25:37"
+      }
+    ],
+    "view": 503704,
+    "danmaku": 1525,
+    "reply": 1051,
+    "like": 26110,
+    "coin": 9805,
+    "favorite": 12403,
+    "share": 862,
+    "timestamp": "2026-01-19 19:25:37"
+  },
+  {
+    "bvid": "BV1d6qPBwEvr",
+    "is_valid": true,
+    "log": [
+      {
+        "status": "success",
+        "message": "成功获取数据: 播放318363, 弹幕549, 评论701, 点赞11874, 投币5846, 收藏3140",
+        "timestamp": "2026-01-19 19:23:28"
+      },
+      {
+        "status": "success",
+        "message": "成功获取数据: 播放318367, 弹幕549, 评论701, 点赞11874, 投币5846, 收藏3140",
+        "timestamp": "2026-01-19 19:25:38"
+      }
+    ],
+    "view": 318367,
+    "danmaku": 549,
+    "reply": 701,
+    "like": 11874,
+    "coin": 5846,
+    "favorite": 3140,
+    "share": 576,
+    "timestamp": "2026-01-19 19:25:38"
+  },
+  {
+    "bvid": "BV1T8iKB9EQJ",
+    "is_valid": true,
+    "log": [
+      {
+        "status": "success",
+        "message": "成功获取数据: 播放716563, 弹幕886, 评论1302, 点赞26504, 投币8552, 收藏13439",
+        "timestamp": "2026-01-19 19:23:29"
+      },
+      {
+        "status": "success",
+        "message": "成功获取数据: 播放716567, 弹幕886, 评论1302, 点赞26504, 投币8552, 收藏13440",
+        "timestamp": "2026-01-19 19:25:39"
+      }
+    ],
+    "view": 716567,
+    "danmaku": 886,
+    "reply": 1302,
+    "like": 26504,
+    "coin": 8552,
+    "favorite": 13440,
+    "share": 767,
+    "timestamp": "2026-01-19 19:25:39"
+  },
+  {
+    "bvid": "BV1NFBRBxEJj",
+    "is_valid": true,
+    "log": [
+      {
+        "status": "success",
+        "message": "成功获取数据: 播放685579, 弹幕1295, 评论1008, 点赞28392, 投币5956, 收藏6750",
+        "timestamp": "2026-01-19 19:25:40"
+      }
+    ],
+    "view": 685579,
+    "danmaku": 1295,
+    "reply": 1008,
+    "like": 28392,
+    "coin": 5956,
+    "favorite": 6750,
+    "share": 608,
+    "timestamp": "2026-01-19 19:25:40"
+  }
+]
