@@ -5,3 +5,7 @@
 [submodule "repo/xxm_fans_frontend"]
 	path = repo/xxm_fans_frontend
 	url = git@github.com:yifeianyi/xxm_fans_frontend.git
+
+[submodule "repo/songlist_frontend"]
+	path = repo/songlist_frontend
+	url = ./repo/songlist_frontend
