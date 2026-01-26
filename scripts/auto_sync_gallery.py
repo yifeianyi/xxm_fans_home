@@ -7,6 +7,7 @@
 import os
 import sys
 import django
+import re
 
 # 设置 Django 环境
 sys.path.insert(0, '/home/yifeianyi/Desktop/xxm_fans_home/repo/xxm_fans_backend')
@@ -16,6 +17,15 @@ django.setup()
 from gallery.models import Gallery
 from django.conf import settings
 from django.db import models
+
+def generate_gallery_id(folder_name, parent=None):
+    """生成图集ID：根图集使用文件夹名，子图集使用父图集ID+子文件夹名"""
+    if parent is None:
+        # 根图集：直接使用文件夹名
+        return folder_name
+    else:
+        # 子图集：父图集ID-子文件夹名
+        return f"{parent.id}-{folder_name}"
 
 def sync_gallery():
     """同步图集数据"""
@@ -80,11 +90,11 @@ def sync_gallery():
                 image_files = []
 
             # 生成图集ID
-            gallery_id = rel_path.replace('\\', '-').replace('/', '-')
+            gallery_id = generate_gallery_id(item, parent)
 
-            # 检查图集是否已存在
+            # 检查图集是否已存在（通过 folder_path 查找）
             try:
-                gallery = Gallery.objects.get(id=gallery_id)
+                gallery = Gallery.objects.get(folder_path=folder_url)
 
                 # 更新现有图集
                 gallery.title = item
@@ -98,9 +108,14 @@ def sync_gallery():
                 gallery.save()
 
                 stats['updated'] += 1
-                print(f"  ✓ 更新: {gallery.title} ({gallery.image_count} 张图片)")
+                print(f"  ✓ 更新: {gallery.title} ({gallery.image_count} 张图片) [ID: {gallery.id}]")
 
             except Gallery.DoesNotExist:
+                # 检查ID是否已被占用（可能是同名图集）
+                if Gallery.objects.filter(id=gallery_id).exists():
+                    # ID被占用，使用 folder_path 作为唯一标识
+                    gallery_id = gallery_id + '-' + str(hash(folder_url))[:8]
+
                 # 创建新图集
                 gallery = Gallery.objects.create(
                     id=gallery_id,
@@ -116,11 +131,15 @@ def sync_gallery():
                 )
 
                 stats['created'] += 1
-                print(f"  + 创建: {gallery.title} ({gallery.image_count} 张图片)")
+                print(f"  + 创建: {gallery.title} ({gallery.image_count} 张图片) [ID: {gallery_id}]")
 
-            # 从数据库集合中移除已处理的图集
-            if gallery_id in db_galleries:
-                db_galleries.remove(gallery_id)
+            # 从数据库集合中移除已处理的图集（通过 folder_path）
+            try:
+                db_gallery = Gallery.objects.get(folder_path=folder_url)
+                if db_gallery.id in db_galleries:
+                    db_galleries.remove(db_gallery.id)
+            except Gallery.DoesNotExist:
+                pass
 
             # 递归处理子文件夹
             scan_folder(item_path, gallery, level + 1)
@@ -134,9 +153,9 @@ def sync_gallery():
         for gallery_id in db_galleries:
             try:
                 gallery = Gallery.objects.get(id=gallery_id)
+                print(f"  - 删除: {gallery.title} [ID: {gallery.id}] [路径: {gallery.folder_path}]")
                 gallery.delete()
                 stats['deleted'] += 1
-                print(f"  - 删除: {gallery.title}")
             except Gallery.DoesNotExist:
                 pass
 
