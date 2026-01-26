@@ -89,6 +89,16 @@ def sync_gallery():
             except PermissionError:
                 image_files = []
 
+            # 设置封面：如果没有cover.jpg，使用第一张图片作为封面
+            if not os.path.exists(cover_path) and image_files:
+                # 使用第一张图片作为封面
+                first_image = image_files[0]
+                cover_url = f'{folder_url}{first_image}'
+            elif os.path.exists(cover_path):
+                cover_url = f'{folder_url}cover.jpg'
+            else:
+                cover_url = ''
+
             # 生成图集ID
             gallery_id = generate_gallery_id(item, parent)
 
@@ -164,6 +174,46 @@ def sync_gallery():
     root_galleries = Gallery.objects.filter(parent__isnull=True)
     for root_gallery in root_galleries:
         root_gallery.refresh_image_count()
+
+    # 自动设置封面：为所有没有封面的图集设置封面
+    print("\n自动设置封面...")
+    auto_set_cover_stats = {'updated': 0}
+
+    def find_first_child_cover(gallery):
+        """递归查找第一个有封面的子图集"""
+        children = gallery.children.all().order_by('sort_order', 'id')
+        for child in children:
+            if child.cover_url:
+                return child
+            # 递归查找
+            found = find_first_child_cover(child)
+            if found:
+                return found
+        return None
+
+    for gallery in Gallery.objects.all():
+        if not gallery.cover_url:
+            # 获取第一张图片
+            images = gallery.get_images()
+            if images:
+                # 有图片，使用第一张作为封面
+                gallery.cover_url = images[0]['url']
+                gallery.save()
+                auto_set_cover_stats['updated'] += 1
+                print(f"  ✓ 设置封面: {gallery.title} -> {images[0]['filename']}")
+            else:
+                # 没有图片，尝试使用第一个有封面的子图集
+                first_child_with_cover = find_first_child_cover(gallery)
+                if first_child_with_cover:
+                    gallery.cover_url = first_child_with_cover.cover_url
+                    gallery.save()
+                    auto_set_cover_stats['updated'] += 1
+                    print(f"  ✓ 设置封面(来自子图集): {gallery.title} -> {first_child_with_cover.title}")
+
+    if auto_set_cover_stats['updated'] > 0:
+        print(f"  共更新 {auto_set_cover_stats['updated']} 个图集的封面")
+    else:
+        print("  所有图集都有封面")
 
     # 打印统计信息
     print("\n" + "=" * 60)
