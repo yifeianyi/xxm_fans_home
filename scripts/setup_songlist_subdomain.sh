@@ -91,8 +91,20 @@ echo -e "${YELLOW}[1/5] 创建 Nginx 配置文件...${NC}"
 sed "s/{{DOMAIN}}/$DOMAIN/g" "$TEMPLATE_FILE" > "$NGINX_CONF_FILE"
 echo -e "${GREEN}✓ 配置文件已创建: $NGINX_CONF_FILE${NC}"
 
-# 申请 SSL 证书
-echo -e "${YELLOW}[2/5] 申请 SSL 证书...${NC}"
+# 启用 Nginx 配置（必须在申请 SSL 证书之前）
+echo -e "${YELLOW}[2/5] 启用 Nginx 配置...${NC}"
+ln -sf "$NGINX_CONF_FILE" "$NGINX_SITES_ENABLED/"
+if nginx -t; then
+    systemctl reload nginx
+    echo -e "${GREEN}✓ Nginx 配置已启用并重载${NC}"
+else
+    echo -e "${RED}错误: Nginx 配置测试失败${NC}"
+    echo "请检查配置文件: $NGINX_CONF_FILE"
+    exit 1
+fi
+
+# 申请 SSL 证书（现在 Nginx 配置已启用，Certbot 可以找到匹配的 server block）
+echo -e "${YELLOW}[3/5] 申请 SSL 证书...${NC}"
 echo "请确保域名 $DOMAIN 已正确解析到服务器"
 read -p "继续申请 SSL 证书? (Y/n): " -n 1 -r
 echo
@@ -104,19 +116,12 @@ else
     else
         echo -e "${RED}错误: SSL 证书申请失败${NC}"
         echo "请手动检查域名解析和 Certbot 配置"
+        echo "日志文件: /var/log/letsencrypt/letsencrypt.log"
+        echo ""
+        echo "可以手动运行以下命令重试:"
+        echo "  sudo certbot --nginx -d $DOMAIN"
         exit 1
     fi
-fi
-
-# 启用 Nginx 配置
-echo -e "${YELLOW}[3/5] 启用 Nginx 配置...${NC}"
-ln -sf "$NGINX_CONF_FILE" "$NGINX_SITES_ENABLED/"
-if nginx -t; then
-    systemctl reload nginx
-    echo -e "${GREEN}✓ Nginx 配置已启用并重载${NC}"
-else
-    echo -e "${RED}错误: Nginx 配置测试失败${NC}"
-    exit 1
 fi
 
 # 更新前端域名配置
