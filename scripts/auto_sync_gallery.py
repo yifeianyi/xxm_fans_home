@@ -46,6 +46,7 @@ def sync_gallery():
         'scanned': 0,
         'created': 0,
         'updated': 0,
+        'skipped': 0,
         'deleted': 0,
         'errors': []
     }
@@ -106,19 +107,39 @@ def sync_gallery():
             try:
                 gallery = Gallery.objects.get(folder_path=folder_url)
 
-                # 更新现有图集
-                gallery.title = item
-                gallery.description = f'{item}图集'
-                gallery.cover_url = cover_url
-                gallery.parent = parent
-                gallery.level = level
-                gallery.image_count = len(image_files)
-                gallery.folder_path = folder_url
-                gallery.is_active = True
-                gallery.save()
+                # 检查数据是否需要更新
+                needs_update = (
+                    gallery.title != item or
+                    gallery.image_count != len(image_files) or
+                    gallery.level != level or
+                    gallery.parent != parent
+                )
 
-                stats['updated'] += 1
-                print(f"  ✓ 更新: {gallery.title} ({gallery.image_count} 张图片) [ID: {gallery.id}]")
+                # 如果封面已存在且当前计算出的封面与数据库一致，则不更新封面
+                if gallery.cover_url and gallery.cover_url == cover_url:
+                    # 封面一致，跳过封面更新
+                    pass
+                elif not gallery.cover_url and cover_url:
+                    # 数据库没有封面但当前有封面，可以设置
+                    needs_update = True
+
+                if needs_update:
+                    # 只更新需要更新的字段
+                    gallery.title = item
+                    gallery.description = f'{item}图集'
+                    gallery.parent = parent
+                    gallery.level = level
+                    gallery.image_count = len(image_files)
+                    gallery.folder_path = folder_url
+                    gallery.is_active = True
+                    gallery.save()
+
+                    stats['updated'] += 1
+                    print(f"  ✓ 更新: {gallery.title} ({gallery.image_count} 张图片) [ID: {gallery.id}]")
+                else:
+                    # 数据未变化，跳过
+                    stats['skipped'] += 1
+                    print(f"  ⊙ 跳过: {gallery.title} (数据未变化) [ID: {gallery.id}]")
 
             except Gallery.DoesNotExist:
                 # 检查ID是否已被占用（可能是同名图集）
@@ -175,8 +196,8 @@ def sync_gallery():
     for root_gallery in root_galleries:
         root_gallery.refresh_image_count()
 
-    # 自动设置封面：为所有没有封面的图集设置封面
-    print("\n自动设置封面...")
+    # 自动设置封面：只为没有封面的图集设置封面
+    print("\n自动设置封面（仅处理未设置封面的图集）...")
     auto_set_cover_stats = {'updated': 0}
 
     def find_first_child_cover(gallery):
@@ -191,24 +212,27 @@ def sync_gallery():
                 return found
         return None
 
-    for gallery in Gallery.objects.all():
-        if not gallery.cover_url:
-            # 获取第一张图片
-            images = gallery.get_images()
-            if images:
-                # 有图片，使用第一张作为封面
-                gallery.cover_url = images[0]['url']
+    # 只处理没有封面的图集
+    galleries_without_cover = Gallery.objects.filter(cover_url='')
+    print(f"  发现 {galleries_without_cover.count()} 个图集没有封面")
+
+    for gallery in galleries_without_cover:
+        # 获取第一张图片
+        images = gallery.get_images()
+        if images:
+            # 有图片，使用第一张作为封面
+            gallery.cover_url = images[0]['url']
+            gallery.save()
+            auto_set_cover_stats['updated'] += 1
+            print(f"  ✓ 设置封面: {gallery.title} -> {images[0]['filename']}")
+        else:
+            # 没有图片，尝试使用第一个有封面的子图集
+            first_child_with_cover = find_first_child_cover(gallery)
+            if first_child_with_cover:
+                gallery.cover_url = first_child_with_cover.cover_url
                 gallery.save()
                 auto_set_cover_stats['updated'] += 1
-                print(f"  ✓ 设置封面: {gallery.title} -> {images[0]['filename']}")
-            else:
-                # 没有图片，尝试使用第一个有封面的子图集
-                first_child_with_cover = find_first_child_cover(gallery)
-                if first_child_with_cover:
-                    gallery.cover_url = first_child_with_cover.cover_url
-                    gallery.save()
-                    auto_set_cover_stats['updated'] += 1
-                    print(f"  ✓ 设置封面(来自子图集): {gallery.title} -> {first_child_with_cover.title}")
+                print(f"  ✓ 设置封面(来自子图集): {gallery.title} -> {first_child_with_cover.title}")
 
     if auto_set_cover_stats['updated'] > 0:
         print(f"  共更新 {auto_set_cover_stats['updated']} 个图集的封面")
@@ -222,6 +246,7 @@ def sync_gallery():
     print(f"扫描目录: {stats['scanned']}")
     print(f"创建图集: {stats['created']}")
     print(f"更新图集: {stats['updated']}")
+    print(f"跳过图集: {stats['skipped']}")
     print(f"删除图集: {stats['deleted']}")
 
     if stats['errors']:
