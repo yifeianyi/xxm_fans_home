@@ -40,3 +40,43 @@ Interpret creatively and make unexpected choices that feel genuinely designed fo
 **IMPORTANT**: Match implementation complexity to the aesthetic vision. Maximalist designs need elaborate code with extensive animations and effects. Minimalist or refined designs need restraint, precision, and careful attention to spacing, typography, and subtle details. Elegance comes from executing the vision well.
 
 Remember: Claude is capable of extraordinary creative work. Don't hold back, show what can truly be created when thinking outside the box and committing fully to a distinctive vision.
+
+## Related Skills
+
+When working on frontend projects, also consider these specialized skills:
+
+- **SEO Optimization** (`seo.md`): Ensures all pages and components follow SEO best practices for search engine ranking. Apply this skill when creating new pages, adding features, or optimizing existing content. Covers Title tags, Meta descriptions, H1 tags, keyword density, internal links, image SEO, and URL structure.
+
+## XXM Fans Home Project Specific Guidelines
+
+When working on the XXM Fans Home project, follow these additional requirements:
+
+### SEO Standards
+All new pages and features MUST follow the SEO standards defined in `seo.md`:
+- Include "咻咻满" keyword in Title and Meta Description
+- Add H1 tag with "咻咻满" keyword
+- Maintain keyword density of 3-5%
+- Use internal links with keyword-rich anchor text
+- Add Alt text to all images containing "咻咻满"
+- Follow standard URL structure (lowercase, hyphens, static URLs)
+
+### Design System
+Use the existing design system:
+- Colors: Sage green (#8eb69b), Peach pink (#f8b195), Earthy brown (#4a3728)
+- Fonts: Quicksand (display) + Noto Sans SC (body)
+- Style: Forest fresh style, glass morphism effects, rounded card design
+- Components: Use existing components from `presentation/components/`
+
+### Architecture
+Follow the DDD three-layer architecture:
+- **Domain Layer**: Business models and interfaces in `domain/`
+- **Infrastructure Layer**: API implementations and config in `infrastructure/`
+- **Presentation Layer**: UI components and pages in `presentation/`
+- **Shared Layer**: Utilities and services in `shared/`
+
+### Tech Stack
+- React 19.2.3 + TypeScript 5.8.2
+- Vite 6.2.0
+- React Router DOM 7.12.0
+- Tailwind CSS (CDN)
+- react-helmet for SEO
