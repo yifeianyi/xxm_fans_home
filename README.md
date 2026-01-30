@@ -88,7 +88,10 @@ xxm_fans_home/
 ├── logs/                   # 日志目录
 ├── media/                  # 媒体文件目录
 │   ├── covers/            # 封面图片
-│   └── footprint/         # 二创图片资源
+│   ├── footprint/         # 二创图片资源
+│   ├── gallery/           # 图集图片资源
+│   ├── settings/          # 网站设置相关图片
+│   └── songlist/          # 歌单相关图片
 ├── repo/                   # 代码仓库
 │   ├── xxm_fans_backend/   # Django后端项目
 │   │   ├── core/          # 核心模块（缓存、异常、响应格式）
@@ -96,6 +99,7 @@ xxm_fans_home/
 │   │   ├── fansDIY/       # 粉丝二创作品管理应用
 │   │   ├── site_settings/ # 网站设置应用
 │   │   ├── data_analytics/ # 数据分析应用
+│   │   ├── gallery/       # 图集管理应用
 │   │   ├── songlist/      # 模板化歌单应用
 │   │   ├── xxm_fans_home/ # Django项目配置
 │   │   ├── tools/         # 实用工具脚本
@@ -136,7 +140,8 @@ xxm_fans_home/
 ├── static/                 # 静态文件目录
 ├── .gitignore              # Git忽略配置
 ├── .gitmodules             # Git子模块配置
-├── README.md               # 项目说明文档
+├── README.md               # 项目说明文档（本文件）
+├── AGENTS.md               # 项目上下文文档（AI交互使用）
 └── IFLOW.md                # 项目技术文档
 ```
 
@@ -299,7 +304,20 @@ npm run dev
 - **WorkMetricsHour**: 小时级指标追踪
 - **CrawlSession**: 爬取任务管理
 
-#### 5. songlist - 模板化歌单应用（核心创新）
+#### 5. gallery - 图集管理应用
+- **GalleryCategory**: 图集分类，支持多级分类结构
+- **GalleryItem**: 图集图片项，包含图片信息、标题、描述、排序等
+- **GalleryCover**: 图集封面管理
+- **核心功能**:
+  - 多级图集分类系统，灵活的内容组织
+  - 图片自动同步到数据库，支持增量同步
+  - 封面自动（随机选择）或手动设置
+  - 图片懒加载和占位符优化
+  - 支持图片增删改查和批量操作
+  - 图片排序和分组展示
+  - 自动检测文件夹变化，更新数据库
+
+#### 6. songlist - 模板化歌单应用（核心创新）
 - **设计理念**: 配置驱动的动态模型创建
 - **核心特性**: 一行配置添加艺术家、自动生成模型和API、独立权限管理
 - **配置示例**:
@@ -310,10 +328,11 @@ ARTIST_CONFIG = {
 }
 ```
 
-#### 6. core - 核心共享模块
+#### 7. core - 核心共享模块
 - **cache.py**: 缓存管理工具
 - **exceptions.py**: 自定义异常类
 - **responses.py**: 统一响应格式
+- **middleware.py**: 自定义中间件
 - **utils/**: 通用工具函数
 
 ### 前端功能模块
@@ -360,6 +379,14 @@ ARTIST_CONFIG = {
 - `GET /api/songlist/styles/?artist=artist_id` - 曲风列表
 - `GET /api/songlist/random/?artist=artist_id` - 随机音乐作品
 
+### 图集管理
+- `GET /api/gallery/categories/` - 图集分类列表
+- `GET /api/gallery/categories/<id>/` - 分类详情
+- `GET /api/gallery/categories/<id>/items/` - 分类下的图片列表
+- `GET /api/gallery/items/` - 图片列表
+- `GET /api/gallery/items/<id>/` - 图片详情
+- `POST /api/gallery/sync/` - 同步文件夹图片到数据库
+
 ### 其他
 - `GET /api/recommendation/` - 推荐语
 - `GET /api/site-settings/` - 网站设置
@@ -368,6 +395,7 @@ ARTIST_CONFIG = {
 ### 媒体文件
 - `/covers/*` - 封面图片
 - `/footprint/*` - 二创图片资源
+- `/gallery/*` - 图集图片资源
 - `/media/*` - 其他媒体文件
 
 ## ⚡ 性能测试
@@ -467,6 +495,9 @@ repo/xxm_fans_backend/static/covers -> media/covers
 
 # 二创图片资源
 repo/xxm_fans_backend/static/footprint -> media/footprint
+
+# 图集图片资源
+repo/xxm_fans_backend/static/gallery -> media/gallery
 ```
 
 #### 基础设施配置软链接（可选，需要 root 权限）
@@ -512,6 +543,7 @@ ls -la repo/xxm_fans_backend/.env
 ls -la repo/xxm_fans_frontend/.env
 ls -la repo/xxm_fans_backend/static/covers
 ls -la repo/xxm_fans_backend/static/footprint
+ls -la repo/xxm_fans_backend/static/gallery
 
 # 检查基础设施软链接（需要 root 权限）
 sudo ls -la /etc/nginx/sites-enabled/xxm_fans_home
@@ -669,8 +701,9 @@ export DJANGO_ALLOWED_HOSTS='your-domain.com'
 ## 📚 文档资源
 
 ### 项目文档
-- `IFLOW.md` - 项目技术文档（完整的项目说明）
 - `README.md` - 项目说明文档（本文件）
+- `AGENTS.md` - 项目上下文文档（AI交互使用，包含完整项目信息）
+- `IFLOW.md` - 项目技术文档
 
 ### 后端文档
 
@@ -697,21 +730,21 @@ export DJANGO_ALLOWED_HOSTS='your-domain.com'
 位于 `doc/` 目录：
 
 - `BV号导入视频标题格式说明.md` - BV号导入功能详细说明
-
-  - 支持的视频标题格式
-
-  - 解析规则和提取逻辑
-
-  - 如何修改标题格式
-
-  - 测试方法和最佳实践
+- `DEPLOYMENT_SYMLINKS.md` - 部署软链接配置说明
+- `数据库SQLite到MySQL迁移方案.md` - 数据库迁移方案
+- `后台管理系统重构方案.md` - 后台管理系统重构方案
+- `gallery_implementation_plan.md` - 图集功能实现计划
+- `gallery_implementation_report.md` - 图集功能实现报告
+- `gallery_multilevel_optimization.md` - 图集多级分类优化
+- `gallery_thumbnail_implementation_plan.md` - 图集缩略图实现计划
 
 各应用也有独立的文档目录：
 - `doc/core/` - core模块文档
 - `doc/song_management/` - song_management应用文档
 - `doc/fansDIY/` - fansDIY应用文档
 - `doc/site_settings/` - site_settings应用文档
-- `doc/Data_analyics/` - data_analytics应用文档
+- `doc/data_analytics/` - data_analytics应用文档
+- `doc/gallery/` - gallery应用文档
 - `doc/songlist/` - songlist应用文档
 
 ### 前端文档
@@ -747,9 +780,10 @@ export DJANGO_ALLOWED_HOSTS='your-domain.com'
 10. **生产优化**: 前端生产构建包含文件名哈希、代码分割、压缩等优化
 11. **Gunicorn配置**: 集中化的Gunicorn配置，便于性能调优
 12. **双环境支持**: 完善的开发和生产环境配置和脚本
-13. **二创资源**: 专门的二创图片资源路径和Nginx配置
-14. **配置集中管理**: 统一的 `env/` 目录管理所有环境变量，通过软链接实现配置共享
-15. **高度可定制**: 框架化设计，支持快速定制和功能扩展，适用于不同艺术家和品牌
+13. **图集管理**: 完整的图集管理系统，支持多级分类、自动同步和懒加载
+14. **二创资源**: 专门的二创图片资源路径和Nginx配置
+15. **配置集中管理**: 统一的 `env/` 目录管理所有环境变量，通过软链接实现配置共享
+16. **高度可定制**: 框架化设计，支持快速定制和功能扩展，适用于不同艺术家和品牌
 
 ## 🎨 网站信息
 
@@ -783,6 +817,9 @@ export DJANGO_ALLOWED_HOSTS='your-domain.com'
 11. 支持多语言国际化
 12. 增加用户系统和权限管理
 13. 支持RSS订阅和邮件通知
+14. 图集功能增强：图片水印、批量编辑、相册分享
+15. 图集缩略图自动生成和优化
+16. 图片AI分类和智能标签系统
 
 ## 🤝 贡献指南
 
