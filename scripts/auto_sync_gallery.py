@@ -18,6 +18,15 @@ from gallery.models import Gallery
 from django.conf import settings
 from django.db import models
 
+def is_thumbnail_directory(folder_name):
+    """
+    判断是否为缩略图目录
+    缩略图目录通常包含 'thumbnails'、'thumb' 等关键词
+    """
+    thumbnail_keywords = ['thumbnails', 'thumb', '__pycache__']
+    folder_name_lower = folder_name.lower()
+    return any(keyword in folder_name_lower for keyword in thumbnail_keywords)
+
 def generate_gallery_id(folder_name, parent=None):
     """生成图集ID：根图集使用文件夹名，子图集使用父图集ID+子文件夹名"""
     if parent is None:
@@ -72,6 +81,11 @@ def sync_gallery():
             if not os.path.isdir(item_path):
                 continue
 
+            # 忽略缩略图目录
+            if is_thumbnail_directory(item):
+                print(f"  ⊙ 跳过缩略图目录: {item}")
+                continue
+
             stats['scanned'] += 1
 
             # 计算相对路径
@@ -108,8 +122,8 @@ def sync_gallery():
                 gallery = Gallery.objects.get(folder_path=folder_url)
 
                 # 检查数据是否需要更新
+                # 注意：不再检查 title，因为用户可能已经自定义了标题
                 needs_update = (
-                    gallery.title != item or
                     gallery.image_count != len(image_files) or
                     gallery.level != level or
                     gallery.parent != parent
@@ -123,10 +137,19 @@ def sync_gallery():
                     # 数据库没有封面但当前有封面，可以设置
                     needs_update = True
 
+                # 只有在标题为空或者与文件夹名称相同时才更新标题
+                # 这样可以保留用户自定义的标题
+                if not gallery.title or gallery.title == item:
+                    if gallery.title != item:
+                        needs_update = True
+
                 if needs_update:
                     # 只更新需要更新的字段
-                    gallery.title = item
-                    gallery.description = f'{item}图集'
+                    # 只有在必要时才更新标题（用户未自定义标题）
+                    if not gallery.title or gallery.title == item:
+                        gallery.title = item
+                        gallery.description = f'{item}图集'
+                    
                     gallery.parent = parent
                     gallery.level = level
                     gallery.image_count = len(image_files)
