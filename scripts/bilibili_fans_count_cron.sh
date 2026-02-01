@@ -27,6 +27,28 @@ if [ $EXIT_CODE -eq 0 ]; then
     ERROR_MESSAGE=""
     # 提取关键信息（粉丝数）
     SUMMARY=$(echo "$OUTPUT" | grep -E "✓|粉丝|数据已保存" | head -10)
+
+    # 自动导入数据到数据库
+    echo "开始自动导入数据..."
+    # 找到最新生成的 JSON 文件
+    LATEST_FILE=$(find "${PROJECT_ROOT}/data/spider/fans_count" -name "b_fans_count_*.json" -type f -printf '%T@ %p\n' | sort -n | tail -1 | cut -f2- -d" ")
+
+    if [ -n "$LATEST_FILE" ]; then
+        echo "找到最新数据文件: $LATEST_FILE"
+        cd "${PROJECT_ROOT}/repo/xxm_fans_backend"
+        INGEST_OUTPUT=$(python3 tools/ingest_follower_data.py --file "$LATEST_FILE" 2>&1)
+        INGEST_EXIT_CODE=$?
+        if [ $INGEST_EXIT_CODE -eq 0 ]; then
+            SUMMARY="${SUMMARY}
+数据导入成功"
+        else
+            SUMMARY="${SUMMARY}
+数据导入失败: ${INGEST_OUTPUT}"
+        fi
+    else
+        SUMMARY="${SUMMARY}
+未找到数据文件，跳过导入"
+    fi
 else
     STATUS="failed"
     ERROR_MESSAGE="Script execution failed with exit code $EXIT_CODE"
