@@ -11,13 +11,27 @@ SPIDER_SCRIPT="${PROJECT_ROOT}/spider/get_bilibili_fans_count.py"
 # JSON日志文件路径
 JSON_LOG_FILE="${PROJECT_ROOT}/logs/bilibili_fans_count.json"
 
+# 虚拟环境路径
+# VENV_PATH="${PROJECT_ROOT}/repo/xxm_fans_backend/venv"
+VENV_PATH="${PROJECT_ROOT}/../myven"
+
 # 创建日志目录
 mkdir -p "$(dirname "$JSON_LOG_FILE")"
+
+# 激活虚拟环境（如果存在）
+if [ -d "$VENV_PATH" ]; then
+    echo "激活虚拟环境: $VENV_PATH"
+    source "$VENV_PATH/bin/activate"
+    PYTHON_CMD="python"
+else
+    echo "未找到虚拟环境，使用系统 python3"
+    PYTHON_CMD="python3"
+fi
 
 # 执行爬虫脚本
 cd "$PROJECT_ROOT"
 START_TIME=$(date '+%Y-%m-%d %H:%M:%S')
-OUTPUT=$(python3 "$SPIDER_SCRIPT" 2>&1)
+OUTPUT=$($PYTHON_CMD "$SPIDER_SCRIPT" 2>&1)
 EXIT_CODE=$?
 END_TIME=$(date '+%Y-%m-%d %H:%M:%S')
 
@@ -36,7 +50,8 @@ if [ $EXIT_CODE -eq 0 ]; then
     if [ -n "$LATEST_FILE" ]; then
         echo "找到最新数据文件: $LATEST_FILE"
         cd "${PROJECT_ROOT}/repo/xxm_fans_backend"
-        INGEST_OUTPUT=$(python3 tools/ingest_follower_data.py --file "$LATEST_FILE" 2>&1)
+        # 使用 Django manage.py 命令，自动处理 Python 环境和依赖
+        INGEST_OUTPUT=$($PYTHON_CMD manage.py ingest_follower --file "$LATEST_FILE" 2>&1)
         INGEST_EXIT_CODE=$?
         if [ $INGEST_EXIT_CODE -eq 0 ]; then
             SUMMARY="${SUMMARY}
