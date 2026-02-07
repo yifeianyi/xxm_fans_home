@@ -1321,7 +1321,7 @@ python manage.py startapp site_settings
 
 ### A. 参考文档
 
-- Django官方文档：https://docs.djangoproject.com/
+- Django文档：https://docs.djangoproject.com/
 - Django REST Framework文档：https://www.django-rest-framework.org/
 - Django最佳实践：https://docs.djangoproject.com/en/4.2/internals/deprecation/
 

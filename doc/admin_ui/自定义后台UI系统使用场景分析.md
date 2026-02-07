@@ -679,10 +679,10 @@
 
 ### A. 参考文档
 
-- Ant Design Pro官方文档：https://pro.ant.design/
+- Ant Design Pro文档：https://pro.ant.design/
 - Django REST Framework文档：https://www.django-rest-framework.org/
-- React官方文档：https://react.dev/
-- TypeScript官方文档：https://www.typescriptlang.org/
+- React文档：https://react.dev/
+- TypeScript文档：https://www.typescriptlang.org/
 
 ### B. 推荐资源
 

@@ -22,7 +22,7 @@
 | 关于页面 | AboutPage | - | 中 |
 | 数据分析 | DataAnalysisPage | TimelineChart | 低 |
 | 音乐播放 | - | MusicPlayer | 中 |
-| 原创作品 | - | OriginalsList | 中 |
+| 原唱作品 | - | OriginalsList | 中 |
 
 ---
 
@@ -656,10 +656,10 @@ class MilestoneListView(ListAPIView):
 
 ---
 
-#### 3.2.2 原创作品模块
+#### 3.2.2 原唱作品模块
 
 **需求说明**:
-- 展示精选原创作品（3首）
+- 展示精选原唱作品（3首）
 - 展示作品档案库列表（29首）
 - 支持随机播放功能
 - 集成网易云音乐播放器
@@ -670,7 +670,7 @@ class MilestoneListView(ListAPIView):
 # site_settings/models.py (扩展现有模型)
 
 class OriginalWork(models.Model):
-    """原创作品模型"""
+    """原唱作品模型"""
     title = models.CharField(max_length=200, verbose_name="作品标题")
     artist = models.CharField(max_length=200, verbose_name="艺人")
     release_date = models.DateField(verbose_name="发布日期")
@@ -696,8 +696,8 @@ class OriginalWork(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        verbose_name = "原创作品"
-        verbose_name_plural = "原创作品"
+        verbose_name = "原唱作品"
+        verbose_name_plural = "原唱作品"
         ordering = ['-is_featured', 'display_order', '-release_date']
 
     def __str__(self):
@@ -717,7 +717,7 @@ from .models import OriginalWork
 
 
 class OriginalWorkListView(ListAPIView):
-    """原创作品列表"""
+    """原唱作品列表"""
     serializer_class = OriginalWorkSerializer
 
     def get_queryset(self):
@@ -737,7 +737,7 @@ class OriginalWorkListView(ListAPIView):
 
 @api_view(['GET'])
 def RandomOriginalWorkView(request):
-    """随机原创作品"""
+    """随机原唱作品"""
     import random
     works = OriginalWork.objects.all()
     if works:
@@ -749,8 +749,8 @@ def RandomOriginalWorkView(request):
 
 **API端点**:
 
-- `GET /api/site-settings/originals/` - 获取原创作品列表
-- `GET /api/site-settings/originals/random/` - 获取随机原创作品
+- `GET /api/site-settings/originals/` - 获取原唱作品列表
+- `GET /api/site-settings/originals/random/` - 获取随机原唱作品
 
 **实施步骤**:
 1. 创建 `OriginalWork` 模型
@@ -1197,7 +1197,7 @@ urlpatterns = [
 
 ### 5.2 第二阶段（中优先级）
 
-**目标**: 实现增强功能（关于页面、原创作品）
+**目标**: 实现增强功能（关于页面、原唱作品）
 
 **任务清单**:
 - [ ] 扩展 `SiteSettings` 模型
@@ -1481,7 +1481,7 @@ python manage.py dumpdata gallery livestream site_settings > backup_$(date +%Y%m
 
 1. **图集更新**: 定期更新图集内容
 2. **直播数据**: 定期同步直播数据
-3. **原创作品**: 定期添加新作品
+3. **原唱作品**: 定期添加新作品
 
 ### 11.3 功能迭代
 
@@ -1496,7 +1496,7 @@ python manage.py dumpdata gallery livestream site_settings > backup_$(date +%Y%m
 本适配方案详细说明了前端 V2 大版本更新后，后端需要进行的所有适配工作。主要内容包括：
 
 1. **新增2个应用**: `gallery`（图集管理）、`livestream`（直播纪事）
-2. **扩展现有应用**: `site_settings`（关于页面、原创作品）、`data_analytics`（数据分析增强）、`song_management`（月度记录）
+2. **扩展现有应用**: `site_settings`（关于页面、原唱作品）、`data_analytics`（数据分析增强）、`song_management`（月度记录）
 3. **新增数据模型**: Gallery, GalleryImage, Livestream, LivestreamRecording, LivestreamSongCut, LivestreamScreenshot, Milestone, OriginalWork, AccountData, VideoMetrics
 4. **新增API接口**: 约20个新接口
 5. **扩展Admin后台**: 为所有新模型配置Admin界面

@@ -204,6 +204,6 @@ export PATH=/usr/local/bin:/usr/bin:/bin
 
 ## 参考资料
 
-- Cron官方文档：`man cron`
+- Cron文档：`man cron`
 - Crontab帮助：`man crontab`
 - 系统日志位置：`/var/log/syslog` (Debian/Ubuntu) 或 `/var/log/cron` (CentOS/RHEL)

@@ -274,7 +274,7 @@ TempSongListFrontend/
 |------|------|
 | **TypeScript** | 提供类型安全，减少运行时错误，提升开发体验 |
 | **Vue Router** | 支持路由管理，便于未来扩展多页面功能 |
-| **Pinia** | 官方推荐的状态管理方案，替代 Vuex，更轻量 |
+| **Pinia** | 推荐的状态管理方案，替代 Vuex，更轻量 |
 | **Axios** | 成熟的 HTTP 客户端，支持拦截器、请求取消等 |
 | **@vueuse/core** | 提供丰富的组合式函数，减少重复代码 |
 | **Vitest** | 与 Vite 深度集成的测试框架，性能优秀 |
@@ -1568,13 +1568,13 @@ async function fetchSongs(filters: SongFilters): Promise<Song[]> {
 
 ## 📚 参考资料
 
-- [Vue 3 官方文档](https://vuejs.org/)
-- [Vue Router 官方文档](https://router.vuejs.org/)
-- [Pinia 官方文档](https://pinia.vuejs.org/)
-- [TypeScript 官方文档](https://www.typescriptlang.org/)
-- [Vite 官方文档](https://vitejs.dev/)
-- [Element Plus 官方文档](https://element-plus.org/)
-- [VueUse 官方文档](https://vueuse.org/)
+- [Vue 3 文档](https://vuejs.org/)
+- [Vue Router 文档](https://router.vuejs.org/)
+- [Pinia 文档](https://pinia.vuejs.org/)
+- [TypeScript 文档](https://www.typescriptlang.org/)
+- [Vite 文档](https://vitejs.dev/)
+- [Element Plus 文档](https://element-plus.org/)
+- [VueUse 文档](https://vueuse.org/)
 - [Vue 风格指南](https://vuejs.org/style-guide/)
 
 ---
