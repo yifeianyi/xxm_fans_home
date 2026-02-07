@@ -1940,9 +1940,9 @@ echo "歌单数据库大小: ${SONGLIST_SIZE}"
 
 ### 9.5 参考资料
 
-- [SQLite3 官方文档](https://www.sqlite.org/docs.html)
-- [MySQL 官方文档](https://dev.mysql.com/doc/)
-- [PostgreSQL 官方文档](https://www.postgresql.org/docs/)
+- [SQLite3 文档](https://www.sqlite.org/docs.html)
+- [MySQL 文档](https://dev.mysql.com/doc/)
+- [PostgreSQL 文档](https://www.postgresql.org/docs/)
 - [Django 数据库文档](https://docs.djangoproject.com/en/5.2/ref/databases/)
 - [SQLite3 vs MySQL vs PostgreSQL 对比](https://www.digitalocean.com/community/tutorials/sqlite-vs-mysql-vs-postgresql-a-comparison-of-relational-database-management-systems)
 
