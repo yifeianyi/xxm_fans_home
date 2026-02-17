@@ -177,6 +177,82 @@ def export_and_crawl_tier(
     return True, result_info, output_path
 
 
+def merge_crawl_results(
+    output_files: Dict[WorkTier, Optional[str]],
+    date_str: str,
+    hour_str: str
+) -> Optional[str]:
+    """
+    合并多个分层的爬取结果文件为一个文件
+    
+    Args:
+        output_files: 各分层的输出文件路径字典
+        date_str: 日期字符串
+        hour_str: 小时字符串
+        
+    Returns:
+        Optional[str]: 合并后的文件路径，如果无法合并则返回 None
+    """
+    import json
+    
+    merged_data = {
+        "session_id": f"merged_{date_str.replace('-', '')}{hour_str}00",
+        "crawl_time": datetime.now().isoformat(),
+        "crawl_hour": hour_str,
+        "total_count": 0,
+        "success_count": 0,
+        "fail_count": 0,
+        "skip_count": 0,
+        "duration_seconds": 0,
+        "data": [],
+        "source_tiers": []
+    }
+    
+    valid_files = []
+    for tier, output_path in output_files.items():
+        if output_path and os.path.exists(output_path):
+            try:
+                with open(output_path, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                
+                # 累加统计信息
+                merged_data["total_count"] += data.get("total_count", 0)
+                merged_data["success_count"] += data.get("success_count", 0)
+                merged_data["fail_count"] += data.get("fail_count", 0)
+                merged_data["skip_count"] += data.get("skip_count", 0)
+                merged_data["duration_seconds"] += data.get("duration_seconds", 0)
+                
+                # 合并数据
+                merged_data["data"].extend(data.get("data", []))
+                merged_data["source_tiers"].append(tier.value)
+                valid_files.append(output_path)
+                
+                logger.info(f"✓ 合并 {tier.value.upper()} 数据: {len(data.get('data', []))} 条")
+                
+            except Exception as e:
+                logger.error(f"✗ 读取 {tier.value} 数据失败: {e}")
+    
+    if not valid_files:
+        logger.warning("没有有效的数据文件可以合并")
+        return None
+    
+    # 生成合并后的文件路径
+    project_root = get_project_root()
+    merged_dir = os.path.join(project_root, "data", "spider", "views", date_str[:4], date_str[5:7], date_str[8:10])
+    os.makedirs(merged_dir, exist_ok=True)
+    
+    merged_filename = f"{date_str}-{hour_str}_views_data_merged.json"
+    merged_path = os.path.join(merged_dir, merged_filename)
+    
+    # 写入合并后的文件
+    with open(merged_path, 'w', encoding='utf-8') as f:
+        json.dump(merged_data, f, ensure_ascii=False, indent=2)
+    
+    logger.info(f"✓ 合并完成: 总计 {merged_data['total_count']} 条记录 -> {merged_path}")
+    
+    return merged_path
+
+
 def import_crawl_result(
     output_path: str,
     date_str: str,
@@ -288,29 +364,36 @@ def run_parallel_crawl(
                 results["tiers"][tier.value] = {"error": str(e)}
                 output_files[tier] = None
     
-    # 统一导入所有结果
+    # 合并并统一导入所有结果
     logger.info("\n" + "=" * 60)
-    logger.info("开始统一导入数据...")
+    logger.info("开始合并并导入数据...")
     logger.info("=" * 60)
     
     crawl_time = datetime.now()
     date_str = crawl_time.strftime('%Y-%m-%d')
     hour_str = crawl_time.strftime('%H')
     
+    # 合并所有分层的数据文件
+    merged_path = merge_crawl_results(output_files, date_str, hour_str)
+    
+    # 统一导入合并后的文件
     all_import_success = True
-    for tier, output_path in output_files.items():
-        if output_path:
-            logger.info(f"\n导入{tier.value.upper()}数据...")
-            success = import_crawl_result(output_path, date_str, hour_str, force)
-            results["tiers"][tier.value]["import_success"] = success
-            if not success:
-                all_import_success = False
-        else:
-            logger.info(f"跳过{tier.value.upper()}数据导入（无输出文件）")
+    if merged_path:
+        logger.info(f"\n导入合并后的数据...")
+        success = import_crawl_result(merged_path, date_str, hour_str, force)
+        # 为每个分层记录导入状态
+        for tier in output_files.keys():
+            if tier.value in results["tiers"]:
+                results["tiers"][tier.value]["import_success"] = success
+        if not success:
+            all_import_success = False
+    else:
+        logger.warning("没有数据需要导入")
+        all_import_success = False
     
     results["end_time"] = timezone.localtime().strftime('%Y-%m-%d %H:%M:%S')
     
-    # 判断整体是否成功（至少有一个爬取成功，且所有导入成功）
+    # 判断整体是否成功（至少有一个爬取成功，且导入成功）
     any_crawl_success = any(
         info.get("status") == "success" 
         for info in results["tiers"].values()
