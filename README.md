@@ -39,13 +39,15 @@
   - mysqlclient 2.1.1 (MySQL支持)
 
 ### 前端技术栈
-- **框架**: React 19.2.3 + TypeScript 5.8.2
-- **构建工具**: Vite 6.2.0
-- **路由**: React Router DOM 7.12.0
+- **框架**: Next.js 16.1.6 + React 19.2.3 + TypeScript 5.8.2
+- **构建工具**: Next.js Turbopack
+- **路由**: Next.js App Router
 - **数据获取**: SWR 2.4.0
 - **图标**: Lucide React 0.562.0
 - **样式**: Tailwind CSS 4.1.18
 - **图片处理**: Sharp 0.34.5
+
+> **🎉 最新更新**: 2026-02-22 完成从 Vite 到 Next.js 的迁移，实现 SSR/SSG 优化，显著提升 SEO 和首屏加载性能。
 
 ### 模板化歌单前端 (TempSongListFrontend)
 - **框架**: Vue 3.2 + Element Plus 2.0
@@ -53,10 +55,14 @@
 - **用途**: 多歌手共享歌单模板，通过域名或 URL 参数区分
 
 ### 部署架构
-- **Web服务器**: Nginx
-- **应用服务器**: Gunicorn
+- **Web服务器**: Nginx (反向代理 + 静态资源)
+- **应用服务器**: 
+  - 后端: Gunicorn (Django)
+  - 前端: Next.js standalone (Node.js)
 - **进程管理**: systemd
 - **缓存**: Redis (可选)
+
+> **⚠️ 部署注意**: Next.js standalone 需要手动复制 `public` 目录，参考 `scripts/build-frontend.sh`
 
 ## 📁 项目结构
 
@@ -73,6 +79,9 @@ xxm_fans_home/
 │   ├── cache/              # 缓存数据
 │   └── spider/             # 爬虫数据
 ├── doc/                     # 项目文档
+│   ├── albums-page-fix-summary.md      # 图集页面修复总结
+│   ├── seo-comparison-guide.md         # SEO 对比评估指南
+│   ├── frontend-optimization-plan.md   # 前端性能优化计划
 │   ├── backend/            # 后端文档
 │   ├── frontend/           # 前端文档
 │   ├── feature/            # 功能文档
@@ -130,6 +139,7 @@ xxm_fans_home/
 │   ├── dev_stop_services.sh           # 开发环境停止脚本
 │   ├── build_start_services.sh        # 生产环境启动脚本
 │   ├── build_stop_services.sh         # 生产环境停止脚本
+│   ├── build-frontend.sh              # 前端构建脚本（含 public 复制）
 │   ├── create_symlinks.sh             # 创建应用级软链接
 │   ├── create_infra_symlinks.sh       # 创建基础设施软链接
 │   ├── bilibili_tiered_cron.sh        # 分层爬虫定时任务脚本
@@ -271,6 +281,26 @@ python manage.py runserver
 cd repo/xxm_fans_frontend
 npm run dev
 ```
+
+### Next.js 前端开发
+
+```bash
+# 开发模式
+cd repo/xxm_fans_frontend
+npm run dev
+
+# 生产构建（standalone）
+npm run build
+
+# 构建后复制 public 目录（关键！）
+cp -r public .next/standalone/
+
+# 启动生产服务
+cd .next/standalone
+node server.js
+```
+
+> **重要**: Next.js standalone 输出不包含 `public` 目录，必须手动复制，否则图片和 favicon 会 404。
 
 ## 📊 核心功能模块
 
@@ -786,6 +816,30 @@ export DJANGO_ALLOWED_HOSTS='your-domain.com'
 - node_modules/
 - .env（软链接，实际配置文件在 env/ 目录中）
 
+## 📋 更新日志
+
+### 2026-02-22 - Next.js 迁移与性能优化
+- **🚀 重大更新**: 前端框架从 Vite 迁移到 Next.js 16.1.6
+  - 实现 SSR/SSG，显著提升 SEO 表现
+  - 服务端渲染首屏 HTML，爬虫友好
+  - 自动 sitemap.xml 生成
+- **⚡ 性能优化**:
+  - 首页图片添加 eager loading 和骨架屏
+  - Songs 页面每页数量优化（50→20），React.memo 缓存
+  - Albums 页面图片懒加载优化
+- **🐛 Bug 修复**:
+  - 修复图集页面路由跳转错误
+  - 修复 Next.js standalone public 目录复制问题
+- **📚 新增文档**:
+  - `doc/albums-page-fix-summary.md` - 图集修复总结
+  - `doc/seo-comparison-guide.md` - SEO 评估指南
+  - `doc/frontend-optimization-plan.md` - 前端优化计划
+  - `scripts/build-frontend.sh` - 前端构建脚本
+
+[查看更多历史更新...](doc/CHANGELOG.md)
+
+---
+
 ## 📚 文档资源
 
 ### 项目文档
@@ -820,8 +874,10 @@ export DJANGO_ALLOWED_HOSTS='your-domain.com'
 7. **图集管理**: 完整的图集管理系统，支持多级分类、自动缩略图生成
 8. **直播日历**: 完整的直播记录管理系统，支持BV号导入
 9. **智能爬虫系统**: 分层爬虫优化（热数据每小时、冷数据每天3次）、定时任务管理、粉丝数追踪
+10. **Next.js SSR/SSG**: 服务端渲染优化 SEO，更好的搜索引擎收录和社交分享
 11. **配置集中管理**: 统一的 `env/` 目录管理所有环境变量
 12. **AI Agent 技能**: 内置自定义技能模块，支持 B站工具、UI优化等
+13. **前端性能优化**: React.memo、图片懒加载、骨架屏、虚拟滚动准备
 
 ## 🎨 网站信息
 

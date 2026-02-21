@@ -22,13 +22,15 @@
 - **依赖**: python-dotenv, Pillow, django-cors-headers, requests, mysqlclient
 
 ### 前端技术栈
-- **框架**: React 19.2.3 + TypeScript 5.8.2
-- **构建工具**: Vite 6.2.0
-- **路由**: React Router DOM 7.12.0
+- **框架**: Next.js 16.1.6 + React 19.2.3 + TypeScript 5.8.2
+- **构建工具**: Next.js Turbopack
+- **路由**: Next.js App Router
 - **数据获取**: SWR 2.4.0
 - **图标**: Lucide React 0.562.0
 - **样式**: Tailwind CSS 4.1.18
 - **图片处理**: Sharp 0.34.5
+
+> **注意**: 2026-02-22 完成从 Vite 到 Next.js 的迁移，实现 SSR/SSG 优化和更好的 SEO 支持。
 
 ### 模板化歌单前端 (TempSongListFrontend)
 - **框架**: Vue 3.2 + Element Plus 2.0
@@ -36,10 +38,14 @@
 - **用途**: 多歌手共享歌单模板，通过域名或 URL 参数区分
 
 ### 部署架构
-- **Web服务器**: Nginx
-- **应用服务器**: Gunicorn
+- **Web服务器**: Nginx (反向代理 + 静态资源)
+- **应用服务器**: 
+  - 后端: Gunicorn (Django)
+  - 前端: Next.js standalone (Node.js)
 - **进程管理**: systemd
 - **定时任务**: systemd timer (B站数据爬虫)
+
+> **部署注意事项**: Next.js standalone 输出需要手动复制 `public` 目录到 `.next/standalone/`，否则静态资源（图片、favicon）将无法访问。可参考 `scripts/build-frontend.sh` 脚本。
 
 ---
 
@@ -320,6 +326,15 @@ cd /home/yifeianyi/Desktop/xxm_fans_home/repo/xxm_fans_backend/test
 - 定义 Props 接口
 - 使用 `useCallback` 缓存事件处理函数
 - 使用 `useMemo` 缓存计算结果
+- 大数据列表使用 `React.memo` 优化重渲染
+
+**Next.js 规范**:
+- 优先使用 Next.js `<Image>` 组件，但静态资源（Nginx 提供）使用原生 `<img>`
+- 原生 `<img>` 必须添加 `// eslint-disable-next-line @next/next/no-img-element`
+- 图片优化属性：`loading`, `fetchPriority`, `decoding`
+- 使用 App Router，页面放在 `app/` 目录下
+- API 路由在 `app/api/` 或后端提供
+- 环境变量使用 `NEXT_PUBLIC_` 前缀（客户端可访问）
 
 **样式规范**:
 - **Tailwind CSS** 用于所有样式
@@ -410,8 +425,12 @@ SPOTIPY_REDIRECT_URI=http://127.0.0.1:8080
 
 ### 前端环境变量 (env/frontend.env)
 ```bash
-VITE_API_BASE_URL=/api
+# Next.js 环境变量
+NEXT_PUBLIC_API_BASE_URL=/api
+INTERNAL_API_BASE_URL=http://localhost:8000/api
 ```
+
+> **迁移说明**: Vite 使用 `VITE_` 前缀，Next.js 使用 `NEXT_PUBLIC_` 前缀。`INTERNAL_API_BASE_URL` 用于服务端渲染时访问后端 API。
 
 ---
 
@@ -554,6 +573,8 @@ systemctl list-timers --all | grep bilibili
 9. **双CDN支持**: 支持双 CDN 配置
 10. **配置集中管理**: 统一的 `env/` 目录管理所有环境变量
 11. **AI Agent 技能**: 内置自定义技能模块，支持 B站工具、UI优化等
+12. **Next.js SSR/SSG**: 服务端渲染优化 SEO，更好的搜索引擎收录
+13. **前端性能优化**: React.memo、图片懒加载、骨架屏、虚拟滚动准备
 
 ---
 
@@ -566,6 +587,67 @@ systemctl list-timers --all | grep bilibili
 5. **遵循** DDD架构原则（前端）
 6. **使用** TypeScript严格模式
 7. **使用** Tailwind CSS进行样式管理
+
+---
+
+## 性能优化指南
+
+### 前端性能优化
+
+1. **图片优化**
+   - 首屏图片使用 `loading="eager" fetchPriority="high"`
+   - 其他图片使用 `loading="lazy"`
+   - 添加 `decoding="async"` 异步解码
+   - 使用骨架屏占位符防止 CLS
+
+2. **大数据列表优化**
+   - 使用 `React.memo` 缓存行组件
+   - 每页数量控制在 20-30 条
+   - 考虑使用 `@tanstack/react-virtual` 实现虚拟滚动
+
+3. **组件优化**
+   - 使用 `useCallback` 缓存事件处理函数
+   - 使用 `useMemo` 缓存计算结果
+   - 避免不必要的重渲染
+
+### 常见性能问题
+
+| 问题 | 原因 | 解决方案 |
+|------|------|---------|
+| 图片不显示 (PSI) | Next.js Image 优化问题 | 使用原生 `<img>` + 图片加载属性 |
+| 页面加载慢 | 大量 DOM 节点 | 分页 + React.memo |
+| LCP 高 | 首屏图片加载慢 | eager + fetchPriority |
+| CLS 高 | 图片无占位 | 骨架屏 + 固定宽高 |
+
+---
+
+## 常见问题 (FAQ)
+
+### Q: Next.js standalone 部署后静态资源 404
+**A**: standalone 输出默认不包含 `public` 目录，需要手动复制：
+```bash
+cp -r public .next/standalone/
+```
+或使用 `scripts/build-frontend.sh` 脚本。
+
+### Q: 歌曲页面滚动卡顿
+**A**: 已优化：
+1. 每页数量从 50 减少到 20
+2. SongTableRow 添加 React.memo
+3. 未来可引入虚拟滚动
+
+### Q: 首页图片在 PageSpeed Insights 不显示
+**A**: 已修复，添加了以下属性：
+```tsx
+<img
+  loading="eager"
+  fetchPriority="high"
+  decoding="async"
+/>
+```
+
+### Q: albums 页跳转到 gallery 路径
+**A**: 已修复，路由跳转从 `/gallery/xxx` 改为 `/albums/xxx`。
 
 ---
 
