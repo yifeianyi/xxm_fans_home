@@ -16,13 +16,22 @@ else
     echo "   Nginx 未运行"
 fi
 
-# 停止前端
-echo "2. 停止 React 前端服务..."
-if ps aux | grep -v grep | grep -q "vite"; then
-    pkill -f "vite"
-    echo "   React 前端已停止"
+# 停止模板化歌单前端
+echo "2. 停止模板化歌单前端服务..."
+if ps aux | grep -v grep | grep -q "vite.*5174"; then
+    pkill -f "vite.*5174"
+    echo "   模板化歌单前端已停止"
 else
-    echo "   React 前端未运行"
+    echo "   模板化歌单前端未运行"
+fi
+
+# 停止主前端
+echo "2.5. 停止主前端服务..."
+if ps aux | grep -v grep | grep -q "next-server.*3000"; then
+    pkill -f "next-server.*3000"
+    echo "   Next.js 前端已停止"
+else
+    echo "   Next.js 前端未运行"
 fi
 
 # 停止后端
