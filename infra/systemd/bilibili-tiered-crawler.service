@@ -1,0 +1,35 @@
+[Unit]
+Description=B站分层数据爬虫服务
+Documentation=https://github.com/xxm-fans/xxm_fans_home
+After=network.target
+
+[Service]
+Type=oneshot
+User=yifeianyi
+Group=yifeianyi
+
+# 项目根目录
+WorkingDirectory=/home/yifeianyi/Desktop/xxm_fans_home
+
+# 执行分层爬虫脚本（使用调度模式）
+ExecStart=/home/yifeianyi/Desktop/xxm_fans_home/scripts/bilibili_tiered_cron.sh
+
+# 环境变量
+Environment="PYTHONUNBUFFERED=1"
+Environment="DJANGO_SETTINGS_MODULE=xxm_fans_home.settings"
+
+# 资源限制
+MemoryLimit=512M
+CPUQuota=50%
+
+# 日志输出
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=bilibili-tiered-crawler
+
+# 重启策略（失败时重试）
+Restart=on-failure
+RestartSec=60
+
+[Install]
+WantedBy=multi-user.target

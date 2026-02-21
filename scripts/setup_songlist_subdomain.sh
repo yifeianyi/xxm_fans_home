@@ -127,6 +127,7 @@ fi
 # 更新前端域名配置
 echo -e "${YELLOW}[4/5] 更新前端域名配置...${NC}"
 FRONTEND_ENV_FILE="$PROJECT_ROOT/repo/TempSongListFrontend/.env"
+FRONTEND_DIR="$PROJECT_ROOT/repo/TempSongListFrontend"
 if [ -f "$FRONTEND_ENV_FILE" ]; then
     # 检查是否已存在该域名配置
     if grep -q "^${DOMAIN}=" "$FRONTEND_ENV_FILE"; then
@@ -136,6 +137,17 @@ if [ -f "$FRONTEND_ENV_FILE" ]; then
         echo "${DOMAIN}=${ARTIST_KEY}" >> "$FRONTEND_ENV_FILE"
     fi
     echo -e "${GREEN}✓ 前端域名配置已更新${NC}"
+
+    # 重新构建前端（因为环境变量在构建时注入）
+    echo -e "${YELLOW}正在重新构建前端...${NC}"
+    cd "$FRONTEND_DIR"
+    if npm run build > /dev/null 2>&1; then
+        echo -e "${GREEN}✓ 前端构建成功${NC}"
+    else
+        echo -e "${RED}错误: 前端构建失败${NC}"
+        echo "请手动运行: cd $FRONTEND_DIR && npm run build"
+        exit 1
+    fi
 else
     echo -e "${YELLOW}警告: 前端环境变量文件不存在: $FRONTEND_ENV_FILE${NC}"
     echo "请手动添加以下配置:"

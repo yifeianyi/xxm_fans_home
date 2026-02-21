@@ -1,0 +1,11 @@
+[Unit]
+Description=B站粉丝数爬虫服务
+After=network.target
+
+[Service]
+Type=oneshot
+User=yifeianyi
+WorkingDirectory=/home/yifeianyi/Desktop/xxm_fans_home
+ExecStart=/home/yifeianyi/Desktop/xxm_fans_home/scripts/bilibili_fans_count_cron.sh
+StandardOutput=journal
+StandardError=journal

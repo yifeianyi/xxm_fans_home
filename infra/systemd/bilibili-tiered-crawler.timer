@@ -1,0 +1,18 @@
+[Unit]
+Description=B站分层数据爬虫定时器
+Documentation=https://github.com/xxm-fans/xxm_fans_home
+
+[Timer]
+# 每小时执行一次
+# 热数据（7天内）: 每小时都爬取
+# 冷数据（7天前）: 只在 00:00, 08:00, 16:00 爬取（由脚本内部判断）
+OnCalendar=*-*-* *:00:00
+
+# 启动后立即执行一次
+OnBootSec=5min
+
+# 持久化（如果系统关机时 missed，开机后执行）
+Persistent=true
+
+[Install]
+WantedBy=timers.target

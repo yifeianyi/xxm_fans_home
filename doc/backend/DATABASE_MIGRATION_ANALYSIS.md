@@ -1357,7 +1357,7 @@ SELECT add_retention_policy('work_metrics_hour', INTERVAL '1 year');
 
 ---
 
-## 8. Docker部署方案分析
+## 8. 本地部署方案
 
 ### 8.1 服务器配置与资源分析
 
@@ -1370,434 +1370,109 @@ SELECT add_retention_policy('work_metrics_hour', INTERVAL '1 year');
 | 硬盘 | 60GB SSD | 固态硬盘 |
 | 操作系统 | Linux | WSL2或云服务器 |
 
-#### 项目资源需求（基于PostgreSQL + TimescaleDB方案）
+#### 项目资源需求（本地部署）
 
 | 服务 | 基础内存需求 | CPU需求 | 磁盘需求 |
 |------|--------------|---------|----------|
 | PostgreSQL + TimescaleDB | 500-800 MB | 0.5-1核 | 1-2 GB/年 |
 | Django + Gunicorn | 200-400 MB | 0.5-1核 | <100 MB |
 | Nginx | 50-100 MB | <0.5核 | <50 MB |
-| **总计（不使用Docker）** | **750-1300 MB** | **1.5-2.5核** | **1.2-2.2 GB/年** |
+| **总计** | **750-1300 MB** | **1.5-2.5核** | **1.2-2.2 GB/年** |
 
-### 8.2 Docker资源开销分析
+### 8.2 部署方案
 
-#### Docker基础开销
-
-| 组件 | 内存开销 | CPU开销 | 说明 |
-|------|----------|---------|------|
-| Docker daemon | 100-200 MB | <0.1核 | Docker守护进程 |
-| 每个容器 | 10-50 MB | <0.05核 | 容器运行时开销 |
-| 容器网络 | 10-20 MB | <0.05核 | 网络命名空间 |
-| 存储驱动 | 20-50 MB | <0.05核 | overlay2等存储驱动 |
-
-#### Docker部署资源需求
-
-| 服务 | 基础内存需求 | 容器开销 | 总内存需求 |
-|------|--------------|----------|------------|
-| PostgreSQL + TimescaleDB | 500-800 MB | 20-50 MB | 520-850 MB |
-| Django + Gunicorn | 200-400 MB | 20-50 MB | 220-450 MB |
-| Nginx | 50-100 MB | 10-20 MB | 60-120 MB |
-| Docker daemon | 100-200 MB | - | 100-200 MB |
-| **总计（使用Docker）** | **850-1370 MB** | **120-270 MB** | **900-1620 MB** |
-
-### 8.3 Docker vs 直接部署对比
-
-#### 资源对比
-
-| 指标 | 直接部署 | Docker部署 | 开销占比 |
-|------|----------|------------|----------|
-| 内存使用 | 750-1300 MB | 900-1620 MB | +20-25% |
-| CPU使用 | 1.5-2.5核 | 1.7-2.7核 | +13-20% |
-| 磁盘使用 | 1.2-2.2 GB/年 | 1.3-2.4 GB/年 | +8-10% |
-| 性能损耗 | 0% | <5% | 可忽略 |
-
-#### 内存利用率对比
-
-| 场景 | 直接部署 | Docker部署 | 说明 |
-|------|----------|------------|------|
-| 轻负载（<50日活） | 35-50% | 45-65% | 都有充足余量 |
-| 中负载（50-100日活） | 50-70% | 65-85% | Docker接近极限 |
-| 高负载（>100日活） | 70-90% | 85-100% | **Docker可能OOM** |
-
-**结论**: 在2核2G内存的服务器上，Docker部署会占用额外20-25%的内存，在中高负载场景下可能导致内存不足。
-
-### 8.4 Docker优势分析
-
-#### 环境一致性
-
-**优势**:
-- ✅ 开发、测试、生产环境完全一致
-- ✅ 消除"在我机器上能运行"的问题
-- ✅ 依赖管理简单，无需手动安装
-
-**示例**:
-```yaml
-# docker-compose.yml
-version: '3.8'
-services:
-  postgres:
-    image: postgres:15-alpine
-    environment:
-      POSTGRES_DB: xxm_fans_home
-      POSTGRES_USER: xxm_user
-      POSTGRES_PASSWORD: xxm_password
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
-
-  django:
-    build: ./repo/xxm_fans_backend
-    depends_on:
-      - postgres
-    environment:
-      DATABASE_URL: postgresql://xxm_user:xxm_password@postgres:5432/xxm_fans_home
-    ports:
-      - "8000:8000"
-
-  nginx:
-    image: nginx:alpine
-    depends_on:
-      - django
-    volumes:
-      - ./repo/xxm_fans_frontend/dist:/usr/share/nginx/html
-      - ./infra/nginx/xxm_nginx.conf:/etc/nginx/nginx.conf
-    ports:
-      - "80:80"
-
-volumes:
-  postgres_data:
-```
-
-#### 快速部署
-
-**优势**:
-- ✅ 一键部署，无需手动配置
-- ✅ 快速回滚，版本切换简单
-- ✅ 易于扩展，横向部署简单
-
-**部署命令**:
-```bash
-# 一键启动所有服务
-docker-compose up -d
-
-# 查看服务状态
-docker-compose ps
-
-# 查看日志
-docker-compose logs -f
-
-# 停止所有服务
-docker-compose down
-```
-
-#### 资源隔离
-
-**优势**:
-- ✅ 进程隔离，提高安全性
-- ✅ 资源限制，防止资源耗尽
-- ✅ 文件系统隔离，避免冲突
-
-**资源限制配置**:
-```yaml
-services:
-  postgres:
-    image: postgres:15-alpine
-    deploy:
-      resources:
-        limits:
-          cpus: '1.0'
-          memory: 800M
-        reservations:
-          cpus: '0.5'
-          memory: 500M
-```
-
-#### 易于迁移
-
-**优势**:
-- ✅ 容器镜像可移植，跨平台部署
-- ✅ 配置文件版本管理，易于回滚
-- ✅ 快速切换云服务商
-
-#### 简化配置管理
-
-**优势**:
-- ✅ 配置集中管理（docker-compose.yml）
-- ✅ 环境变量统一配置
-- ✅ 依赖关系自动处理
-
-### 8.5 Docker劣势分析
-
-#### 资源开销
-
-**劣势**:
-- ❌ 额外内存开销（120-270 MB）
-- ❌ 额外CPU开销（约13-20%）
-- ❌ 额外磁盘开销（约8-10%）
-
-**影响**:
-- 在2核2G内存的服务器上，内存使用率可能达到85-100%
-- 高负载场景下可能导致OOM（内存溢出）
-- 需要限制容器资源，可能影响性能
-
-#### 存储复杂性
-
-**劣势**:
-- ❌ 数据卷管理复杂
-- ❌ 容器内文件系统不可见
-- ❌ 备份和恢复需要特殊处理
-
-**备份示例**:
-```bash
-# Docker内PostgreSQL备份
-docker exec postgres_container pg_dump -U xxm_user xxm_fans_home > backup.sql
-
-# 数据卷备份
-docker run --rm -v postgres_data:/data -v $(pwd):/backup alpine tar czf /backup/postgres_data.tar.gz /data
-```
-
-#### 学习成本
-
-**劣势**:
-- ❌ 需要学习Docker概念和命令
-- ❌ 需要学习docker-compose配置
-- ❌ 调试容器内问题困难
-
-**常用Docker命令**:
-```bash
-# 查看运行中的容器
-docker ps
-
-# 查看容器日志
-docker logs <container_id>
-
-# 进入容器
-docker exec -it <container_id> /bin/bash
-
-# 查看容器资源使用
-docker stats
-
-# 清理未使用的资源
-docker system prune -a
-```
-
-#### 网络配置复杂性
-
-**劣势**:
-- ❌ 容器网络配置复杂
-- ❌ 端口映射需要规划
-- ❌ 容器间通信需要配置
-
-**网络配置示例**:
-```yaml
-services:
-  django:
-    networks:
-      - backend
-      - frontend
-
-  postgres:
-    networks:
-      - backend
-
-  nginx:
-    networks:
-      - frontend
-
-networks:
-  backend:
-    internal: true
-  frontend:
-    driver: bridge
-```
-
-#### 调试困难
-
-**劣势**:
-- ❌ 容器内调试工具有限
-- ❌ 日志查看需要特殊命令
-- ❌ 性能分析困难
-
-**调试示例**:
-```bash
-# 进入容器调试
-docker exec -it <container_id> /bin/bash
-
-# 查看容器内进程
-docker exec <container_id> ps aux
-
-# 查看容器内网络连接
-docker exec <container_id> netstat -tuln
-```
-
-### 8.6 Docker vs 直接部署综合对比
-
-| 对比项 | 直接部署 | Docker部署 | 评分（直接部署） | 评分（Docker） |
-|--------|----------|------------|------------------|----------------|
-| **资源使用** | 750-1300 MB | 900-1620 MB | ⭐⭐⭐⭐⭐ | ⭐⭐⭐ |
-| **性能** | 100% | 95-99% | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ |
-| **部署速度** | 30-60分钟 | 5-10分钟 | ⭐⭐⭐ | ⭐⭐⭐⭐⭐ |
-| **环境一致性** | 低 | 高 | ⭐⭐ | ⭐⭐⭐⭐⭐ |
-| **资源隔离** | 低 | 高 | ⭐⭐ | ⭐⭐⭐⭐⭐ |
-| **可移植性** | 低 | 高 | ⭐⭐ | ⭐⭐⭐⭐⭐ |
-| **运维复杂度** | 低 | 中高 | ⭐⭐⭐⭐⭐ | ⭐⭐⭐ |
-| **学习成本** | 低 | 高 | ⭐⭐⭐⭐⭐ | ⭐⭐ |
-| **调试难度** | 低 | 中高 | ⭐⭐⭐⭐⭐ | ⭐⭐⭐ |
-| **备份恢复** | 简单 | 复杂 | ⭐⭐⭐⭐⭐ | ⭐⭐⭐ |
-| **扩展性** | 低 | 高 | ⭐⭐ | ⭐⭐⭐⭐⭐ |
-| **安全性** | 中 | 高 | ⭐⭐⭐ | ⭐⭐⭐⭐ |
-| **总评分** | **45/60** | **45/60** | - | - |
-
-**结论**: Docker和直接部署在综合评分上持平，但各有优劣。
-
-### 8.7 适合Docker部署的场景
-
-#### ✅ 适合Docker部署的场景
-
-1. **多环境部署**
-   - 需要在多个环境（开发、测试、生产）保持一致
-   - 团队规模较大，多人协作开发
-
-2. **快速迭代**
-   - 需要频繁部署和回滚
-   - 需要快速切换版本
-
-3. **微服务架构**
-   - 服务数量多，依赖关系复杂
-   - 需要独立部署和扩展每个服务
-
-4. **资源充足的服务器**
-   - 服务器内存 >= 4GB
-   - CPU >= 4核
-
-5. **团队熟悉Docker**
-   - 团队成员熟悉Docker概念和命令
-   - 有Docker运维经验
-
-#### ❌ 不适合Docker部署的场景
-
-1. **资源受限的服务器**
-   - 服务器内存 < 4GB
-   - CPU < 4核
-   - **本项目就是这种情况（2核2G内存）**
-
-2. **单服务部署**
-   - 服务数量少（< 3个）
-   - 依赖关系简单
-
-3. **稳定运行**
-   - 部署后很少变更
-   - 不需要频繁部署和回滚
-
-4. **团队不熟悉Docker**
-   - 团队成员不熟悉Docker
-   - 没有Docker运维经验
-
-5. **追求极致性能**
-   - 需要榨干服务器性能
-   - 不能容忍任何性能损耗
-
-### 8.8 本项目Docker部署建议
-
-#### 服务器配置评估
-
-| 配置项 | 数值 | Docker部署需求 | 是否满足 |
-|--------|------|----------------|----------|
-| CPU | 2核 | 1.7-2.7核 | ⚠️ 勉强满足 |
-| 内存 | 2GB | 900-1620 MB | ⚠️ 勉强满足（高负载可能OOM） |
-| 硬盘 | 60GB SSD | 1.3-2.4 GB/年 | ✅ 充足 |
-
-**结论**: 服务器配置勉强满足Docker部署需求，但**内存是瓶颈**，高负载场景下可能导致OOM。
-
-#### 项目特点评估
-
-| 特点 | 说明 | Docker适合度 |
-|------|------|--------------|
-| 服务数量 | 3个（PostgreSQL、Django、Nginx） | ⭐⭐⭐ |
-| 依赖关系 | 简单（Django -> PostgreSQL） | ⭐⭐⭐ |
-| 部署频率 | 低（部署后稳定运行） | ⭐⭐ |
-| 团队规模 | 小（1-2人） | ⭐⭐ |
-| 资源限制 | 严格（2核2G内存） | ⭐ |
-| 性能要求 | 中（< 2秒响应） | ⭐⭐⭐ |
-
-**结论**: 项目特点**不适合Docker部署**，特别是资源限制严格。
-
-#### 综合评估
-
-| 评估维度 | 权重 | 直接部署得分 | Docker部署得分 | 加权得分（直接部署） | 加权得分（Docker） |
-|----------|------|--------------|----------------|----------------------|-------------------|
-| 资源使用 | 30% | 5 | 3 | 1.5 | 0.9 |
-| 性能 | 20% | 5 | 4 | 1.0 | 0.8 |
-| 部署速度 | 10% | 3 | 5 | 0.3 | 0.5 |
-| 环境一致性 | 10% | 2 | 5 | 0.2 | 0.5 |
-| 运维复杂度 | 15% | 5 | 3 | 0.75 | 0.45 |
-| 学习成本 | 10% | 5 | 2 | 0.5 | 0.2 |
-| 扩展性 | 5% | 2 | 5 | 0.1 | 0.25 |
-| **总分** | **100%** | - | - | **4.35** | **3.6** |
-
-**结论**: 直接部署得分（4.35）高于Docker部署（3.6），**推荐直接部署**。
-
-### 8.9 最终建议
-
-#### 推荐方案：直接部署（不使用Docker）
+#### 推荐方案：本地直接部署
 
 **理由**:
-1. ✅ **资源优化**: 直接部署占用内存更少（750-1300 MB vs 900-1620 MB），在2核2G内存的服务器上更安全
-2. ✅ **性能更优**: 无Docker开销，性能提升5-10%
-3. ✅ **运维简单**: 无需学习Docker，运维复杂度低
-4. ✅ **调试容易**: 直接访问服务，调试工具丰富
+1. ✅ **资源优化**: 内存占用低（750-1300 MB），在2核2G内存的服务器上运行安全
+2. ✅ **性能最优**: 无容器化开销，性能100%
+3. ✅ **运维简单**: 使用systemd管理服务，运维复杂度低
+4. ✅ **调试容易**: 直接访问服务和日志，调试工具丰富
 5. ✅ **备份简单**: 直接复制文件或使用标准备份工具
-6. ✅ **适合本项目**: 服务数量少（3个），依赖关系简单，部署频率低
+6. ✅ **适合本项目**: 服务数量少，依赖关系简单
 
-#### 备选方案：Docker部署（未来扩展）
+#### 部署步骤
 
-**适用条件**:
-- 升级服务器配置（>= 4GB内存，>= 4核CPU）
-- 团队成员熟悉Docker
-- 需要多环境部署（开发、测试、生产）
-- 需要快速迭代和频繁部署
+**1. 安装PostgreSQL和TimescaleDB**
+```bash
+# Ubuntu/Debian
+sudo apt-get update
+sudo apt-get install postgresql postgresql-contrib
 
-**Docker部署优势（未来）**:
-- 环境一致性高
-- 部署速度快
-- 易于扩展和迁移
-- 资源隔离安全性高
+# 安装TimescaleDB（根据需要）
+sudo apt-get install timescaledb-postgresql-15
+```
 
-#### 部署方案对比
+**2. 创建数据库和用户**
+```bash
+sudo -u postgres psql
+CREATE DATABASE xxm_fans_home;
+CREATE USER xxm_user WITH PASSWORD 'your_password';
+GRANT ALL PRIVILEGES ON DATABASE xxm_fans_home TO xxm_user;
+\q
+```
 
-| 部署方案 | 资源使用 | 性能 | 运维复杂度 | 学习成本 | 推荐度 |
-|----------|----------|------|------------|----------|--------|
-| **直接部署** | 750-1300 MB | 100% | 低 | 低 | ⭐⭐⭐⭐⭐ |
-| Docker部署 | 900-1620 MB | 95-99% | 中高 | 高 | ⭐⭐⭐ |
+**3. 迁移数据（从SQLite3到PostgreSQL）**
+```bash
+cd /home/yifeianyi/Desktop/xxm_fans_home/repo/xxm_fans_backend
+python manage.py dumpdata --exclude auth.permission --exclude contenttypes > data.json
 
-**最终结论**: **推荐直接部署（不使用Docker）**
+# 修改settings.py使用PostgreSQL
+# 然后导入数据
+python manage.py loaddata data.json
+```
 
-#### 部署建议
+**4. 配置Django连接PostgreSQL**
+```python
+# settings.py
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'xxm_fans_home',
+        'USER': 'xxm_user',
+        'PASSWORD': 'your_password',
+        'HOST': 'localhost',
+        'PORT': '5432',
+    }
+}
+```
 
-**直接部署步骤**:
-1. 安装PostgreSQL和TimescaleDB
-2. 创建数据库和用户
-3. 迁移数据（从SQLite3到PostgreSQL）
-4. 配置Django连接PostgreSQL
-5. 使用systemd管理Django服务
-6. 配置Nginx反向代理
-7. 配置自动备份脚本
+**5. 使用systemd管理Django服务**
+```bash
+# 创建服务文件 /etc/systemd/system/xxm-fans-home.service
+sudo systemctl enable xxm-fans-home
+sudo systemctl start xxm-fans-home
+```
 
-**参考文档**:
-- `doc/数据库SQLite到MySQL迁移方案.md`（修改为PostgreSQL）
-- `scripts/migrate_data_to_mysql.sh`（修改为PostgreSQL）
-- `scripts/setup_mysql_config.sh`（修改为PostgreSQL）
-- `infra/nginx/xxm_nginx.conf`
-- `scripts/build_start_services.sh`
+**6. 配置Nginx反向代理**
+```bash
+# 使用项目提供的Nginx配置
+sudo ln -s /home/yifeianyi/Desktop/xxm_fans_home/infra/nginx/prod-xxm_nginx.conf /etc/nginx/sites-available/
+sudo ln -s /etc/nginx/sites-available/prod-xxm_nginx.conf /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl reload nginx
+```
 
-**Docker部署步骤（未来扩展）**:
-1. 创建Dockerfile（Django）
-2. 创建docker-compose.yml（PostgreSQL、Django、Nginx）
-3. 配置数据卷和备份
-4. 测试容器化部署
-5. 生产环境部署
-6. 配置监控和日志
+**7. 配置自动备份脚本**
+```bash
+# 创建备份脚本
+#!/bin/bash
+BACKUP_DIR="/home/yifeianyi/Desktop/xxm_fans_home/data/backups"
+DATE=$(date +%Y%m%d_%H%M%S)
+
+# 备份数据库
+pg_dump -U xxm_user xxm_fans_home > "$BACKUP_DIR/db_$DATE.sql"
+
+# 备份媒体文件
+tar czf "$BACKUP_DIR/media_$DATE.tar.gz" /home/yifeianyi/Desktop/xxm_fans_home/media/
+```
+
+### 8.3 参考文档
+
+- `infra/nginx/prod-xxm_nginx.conf` - Nginx配置文件
+- `scripts/build_start_services.sh` - 服务启动脚本
+- `scripts/build_stop_services.sh` - 服务停止脚本
+- `infra/systemd/` - systemd服务配置
 
 ---
 

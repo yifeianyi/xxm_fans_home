@@ -8,148 +8,160 @@
 
 本框架适用于以下场景：
 
-- **音乐人粉丝站**: 为歌手、音乐人、乐队建立官方粉丝网站
+- **音乐人粉丝站**: 为歌手、音乐人、乐队建立粉丝网站
 - **艺术家作品展示**: 展示艺术家作品、演出记录和创作历程
 - **音乐社区平台**: 搭建音乐爱好者交流和分享的平台
 - **音乐数据管理**: 管理音乐作品、演出记录和粉丝二创内容
 - **音乐排行榜**: 展示热门作品和实时排行榜数据
 
-## 🎵 项目特色
+## 🎵 核心功能
 
-- **音乐资产管理**: 完整的歌曲信息、演唱记录、曲风分类和标签管理系统
-- **智能搜索筛选**: 支持多维度歌曲搜索和高级筛选功能，快速定位目标内容
-- **实时排行榜**: 多时间维度的热门歌曲排行榜展示，动态追踪作品热度
-- **粉丝二创平台**: 精选二创作品展示和合集管理，支持粉丝互动和内容分享
-- **模板化歌单**: 配置驱动的动态歌单系统，一行配置即可添加新歌手或艺术家
-- **性能优化**: 图片懒加载、缓存优化和高并发支持，确保流畅的用户体验
-- **数据分析**: 作品数据爬取和分析功能，提供数据洞察和运营支持
-- **双环境支持**: 完善的开发和生产环境配置，支持快速部署和切换
-- **配置集中管理**: 统一的配置文件管理方案，便于维护和版本控制
-- **高度可定制**: 模块化架构设计，支持快速定制和功能扩展
+- **音乐资产管理**: 歌曲、演唱记录、曲风、标签管理，支持BV号批量导入
+- **直播日历**: 直播记录管理、日历视图、分段播放、歌切列表
+- **图集管理**: 多级分类、自动缩略图、面包屑导航
+- **粉丝二创平台**: 合集管理、作品展示
+- **模板化歌单**: 配置驱动，一键添加艺术家
+- **数据分析**: 作品数据爬取、粉丝数追踪
+- **智能爬虫**: 分层优化（热数据每小时、冷数据每天3次）
 
 ## 🏗️ 技术架构
 
 ### 后端技术栈
 - **框架**: Django 5.2.3 + Django REST Framework 3.15.2
-- **数据库**: SQLite (开发环境)，支持多数据库配置
-- **编程语言**: Python 3.8+
+- **数据库**: SQLite (开发环境)，支持多数据库配置（songlist 独立数据库）
+- **编程语言**: Python 3.10+
 - **API**: RESTful API
-- **缓存**: Redis (可选)
 - **环境管理**: python-dotenv 1.0.1
 - **其他依赖**:
   - Pillow 10.2.0 (图片处理)
   - django-cors-headers 4.9.0 (跨域支持)
   - requests 2.31.0 (HTTP请求)
+  - mysqlclient 2.1.1 (MySQL支持)
 
 ### 前端技术栈
 - **框架**: React 19.2.3 + TypeScript 5.8.2
 - **构建工具**: Vite 6.2.0
 - **路由**: React Router DOM 7.12.0
+- **数据获取**: SWR 2.4.0
 - **图标**: Lucide React 0.562.0
-- **样式**: Tailwind CSS (通过 CDN 引入)
+- **样式**: Tailwind CSS 4.1.18
 - **图片处理**: Sharp 0.34.5
+
+### 模板化歌单前端 (TempSongListFrontend)
+- **框架**: Vue 3.2 + Element Plus 2.0
+- **构建工具**: Vite 4.0
+- **用途**: 多歌手共享歌单模板，通过域名或 URL 参数区分
 
 ### 部署架构
 - **Web服务器**: Nginx
 - **应用服务器**: Gunicorn
 - **进程管理**: systemd
-- **容器化**: Docker (可选)
 - **缓存**: Redis (可选)
 
 ## 📁 项目结构
 
 ```
 xxm_fans_home/
+├── .agents/                 # AI Agent 技能配置
+│   └── skills/              # 自定义技能模块
+│       ├── bilibili-tools/  # B站工具集
+│       ├── module/          # 通用模块
+│       ├── skill-create/    # 技能创建模板
+│       └── ui-ux-pro-max/   # UI/UX 优化技能
 ├── data/                    # 数据目录
-│   ├── init/               # 初始化数据
-│   ├── spider/             # 爬虫数据
-│   ├── db.sqlite3          # 主数据库
-│   ├── songlist.sqlite3    # 歌单数据库
-│   └── view_data.sqlite3   # 数据分析数据库
-├── doc/                    # 项目文档
+│   ├── backups/            # 备份数据
+│   ├── cache/              # 缓存数据
+│   └── spider/             # 爬虫数据
+├── doc/                     # 项目文档
 │   ├── backend/            # 后端文档
 │   ├── frontend/           # 前端文档
+│   ├── feature/            # 功能文档
+│   ├── bugs-report/        # Bug 报告
 │   └── spider/             # 爬虫文档
-├── env/                    # 环境配置目录（统一配置管理）
-│   ├── backend.env        # 后端环境变量配置（Django配置）
-│   └── frontend.env       # 前端环境变量配置（Vite配置）
-├── infra/                  # 基础设施配置
-│   ├── docker/            # Docker配置
-│   ├── gunicorn/          # Gunicorn配置
+├── env/                     # 环境配置目录（统一配置管理）
+│   ├── backend.env         # 后端环境变量配置
+│   └── frontend.env        # 前端环境变量配置
+├── infra/                   # 基础设施配置
+│   ├── gunicorn/           # Gunicorn配置
 │   │   ├── gunicorn_config.py  # Gunicorn配置文件
 │   │   ├── README.md            # 使用说明
 │   │   └── CHANGELOG.md         # 优化记录
-│   ├── nginx/             # Nginx配置
+│   ├── nginx/              # Nginx配置
 │   │   ├── xxm_nginx.conf       # 开发环境配置
 │   │   ├── prod-xxm_nginx.conf  # 生产环境配置
 │   │   └── FOOTPRINT_CONFIG.md  # 二创资源配置说明
-│   ├── redis/             # Redis配置
-│   └── systemd/           # systemd服务配置
-├── logs/                   # 日志目录
-├── media/                  # 媒体文件目录
-│   ├── covers/            # 封面图片
-│   ├── footprint/         # 二创图片资源
-│   ├── gallery/           # 图集图片资源
-│   ├── settings/          # 网站设置相关图片
-│   └── songlist/          # 歌单相关图片
-├── repo/                   # 代码仓库
-│   ├── xxm_fans_backend/   # Django后端项目
-│   │   ├── core/          # 核心模块（缓存、异常、响应格式）
+│   └── systemd/            # systemd服务配置
+│       ├── bilibili-tiered-crawler.timer  # 分层爬虫定时器
+│       ├── bilibili-views-crawler.timer   # 作品数据爬虫定时器
+│       └── bilibili-spider.timer          # 粉丝数爬虫定时器
+├── logs/                    # 日志目录
+├── media/                   # 媒体文件目录
+│   ├── covers/             # 封面图片
+│   ├── footprint/          # 二创图片资源
+│   ├── gallery/            # 图集图片资源
+│   ├── cloud_picture/      # 弹幕云图资源
+│   ├── data_analytics/     # 数据分析资源
+│   └── songlist/           # 歌单相关图片
+├── repo/                    # 代码仓库（Git子模块）
+│   ├── xxm_fans_backend/    # Django后端项目
+│   │   ├── core/           # 核心模块（缓存、异常、响应格式、缩略图生成）
 │   │   ├── song_management/ # 歌曲管理应用
-│   │   ├── fansDIY/       # 粉丝二创作品管理应用
-│   │   ├── site_settings/ # 网站设置应用
+│   │   ├── fansDIY/        # 粉丝二创作品管理应用
+│   │   ├── site_settings/  # 网站设置应用
 │   │   ├── data_analytics/ # 数据分析应用
-│   │   ├── gallery/       # 图集管理应用
-│   │   ├── songlist/      # 模板化歌单应用
-│   │   ├── xxm_fans_home/ # Django项目配置
-│   │   ├── tools/         # 实用工具脚本
-│   │   ├── test/          # 性能测试（Locust）
-│   │   ├── doc/           # 项目文档
-│   │   ├── static/        # 静态文件
-│   │   ├── staticfiles/   # 收集的静态文件
-│   │   ├── templates/     # Django模板
-│   │   ├── logs/          # 日志文件
-│   │   ├── covers/        # 封面图片（符号链接）
-│   │   ├── .env           # 环境变量配置（软链接到 env/backend.env）
-│   │   ├── manage.py      # Django管理脚本
-│   └── xxm_fans_frontend/  # React前端项目
-│       ├── domain/        # 领域层（业务模型和服务接口）
-│       ├── infrastructure/ # 基础设施层（API实现和配置）
-│       ├── presentation/  # 表现层（React组件和页面）
-│       ├── shared/        # 共享层（工具函数和服务）
-│       ├── public/        # 静态资源
-│       ├── doc/           # 项目文档
-│       ├── test/          # 测试目录
-│       ├── .env           # 环境变量配置（软链接到 env/frontend.env）
-│       ├── App.tsx        # 应用根组件
-│       ├── index.tsx      # 应用入口
-│       ├── vite.config.ts # Vite开发环境配置
-│       ├── vite.config.prod.ts # Vite生产环境配置
-│       └── package.json   # 项目依赖
-├── scripts/                # 部署和工具脚本
-│   ├── dev_start_services.sh    # 开发环境启动脚本
-│   ├── dev_stop_services.sh     # 开发环境停止脚本
-│   ├── build_start_services.sh  # 生产环境启动脚本
-│   ├── build_stop_services.sh   # 生产环境停止脚本
-│   ├── test_integration.sh      # 集成测试脚本
-│   ├── copy_fansdiy_data.py     # 数据复制脚本
-│   ├── verify_fansdiy_data.py   # 数据验证脚本
-│   ├── FANS_DIY_DATA_COPY.md    # 数据复制文档
-│   └── README.md                # 脚本说明
-├── spider/                 # 爬虫目录
-├── static/                 # 静态文件目录
-├── .gitignore              # Git忽略配置
-├── .gitmodules             # Git子模块配置
-├── README.md               # 项目说明文档（本文件）
-├── AGENTS.md               # 项目上下文文档（AI交互使用）
-└── IFLOW.md                # 项目技术文档
+│   │   ├── gallery/        # 图集管理应用
+│   │   ├── livestream/     # 直播日历应用
+│   │   ├── songlist/       # 模板化歌单应用
+│   │   ├── xxm_fans_home/  # Django项目配置
+│   │   ├── tools/          # 实用工具脚本
+│   │   │   ├── spider/     # 爬虫工具模块
+│   │   │   └── bilibili/   # B站 API 封装模块
+│   │   ├── test/           # 性能测试（Locust）
+│   │   └── requirements.txt # Python依赖
+│   ├── xxm_fans_frontend/   # React前端项目
+│   │   ├── domain/         # 领域层（业务模型和服务接口）
+│   │   ├── infrastructure/ # 基础设施层（API实现和配置）
+│   │   ├── presentation/   # 表现层（React组件和页面）
+│   │   ├── shared/         # 共享层（工具函数和服务）
+│   │   └── package.json    # 项目依赖
+│   └── TempSongListFrontend/ # Vue模板化歌单前端
+├── scripts/                 # 部署和工具脚本
+│   ├── dev_start_services.sh          # 开发环境启动脚本
+│   ├── dev_stop_services.sh           # 开发环境停止脚本
+│   ├── build_start_services.sh        # 生产环境启动脚本
+│   ├── build_stop_services.sh         # 生产环境停止脚本
+│   ├── create_symlinks.sh             # 创建应用级软链接
+│   ├── create_infra_symlinks.sh       # 创建基础设施软链接
+│   ├── bilibili_tiered_cron.sh        # 分层爬虫定时任务脚本
+│   ├── bilibili_views_cron.sh         # 作品数据爬虫定时任务脚本
+│   ├── bilibili_fans_count_cron.sh    # B站粉丝数爬虫定时任务脚本
+│   ├── auto_sync_gallery.py           # 自动同步图集数据
+│   ├── sync_cloud_picture.py          # 同步弹幕云图
+│   └── import_cloud_picture_to_livestream.py # 导入弹幕云图到直播日历
+├── spider/                  # 爬虫目录
+│   ├── run_tiered_crawler.py          # 分层爬虫主控脚本
+│   ├── run_views_crawler.py           # 作品数据爬虫主控脚本
+│   ├── get_bilibili_fans_count.py     # B站粉丝数爬虫
+│   ├── bilibili_dynamic_monitor.py    # B站动态监控
+│   ├── weibo_monitor_selenium.py      # 微博监控
+│   ├── TIERED_CRAWLER_README.md       # 分层爬虫文档
+│   └── README.md                      # 爬虫使用文档
+├── tools/                   # 实用工具脚本
+│   ├── download_workstatic_covers.py  # 下载作品封面
+│   ├── reorganize_gallery_structure.py # 重组图集结构
+│   ├── reorganize_weibo_gallery.py    # 重组微博图集
+│   └── update_gallery_database.py     # 更新图集数据库
+├── .gitignore               # Git忽略配置
+├── .gitmodules              # Git子模块配置
+├── README.md                # 项目说明文档（本文件）
+└── AGENTS.md                # 项目上下文文档（AI交互使用）
 ```
 
 ## 🚀 快速开始
 
 ### 环境要求
 
-- Python 3.8+
+- Python 3.10+
 - Node.js 18+
 - npm
 
@@ -197,16 +209,14 @@ sudo ./create_infra_symlinks.sh
 ### 集成测试
 
 ```bash
-cd /path/xxm_fans_home/scripts
-./test_integration.sh
+# 后端性能测试
+cd /path/xxm_fans_home/repo/xxm_fans_backend/test
+./run_performance_test.sh
 ```
 
-### BV号导入使用提示
+### BV号导入提示
 
-在使用BV号导入功能前，请确保：
-1. 视频分P标题符合格式要求：`歌曲名称-YYYY年M月D日`
-2. 详细的使用说明请参考 [BV号导入视频标题格式说明](doc/BV号导入视频标题格式说明.md)
-3. 建议先在测试环境验证导入结果
+详细使用说明请参考 [BV号导入视频标题格式说明](doc/bugs-report/BV号导入视频标题格式说明.md)
 
 ### 手动安装步骤
 
@@ -218,16 +228,10 @@ cd xxm_fans_home
 
 2. **创建软链接**
 ```bash
-# 创建应用级软链接（环境配置和媒体资源）
 cd scripts
 ./create_symlinks.sh
-
-# 验证软链接
-ls -la ../repo/xxm_fans_backend/.env
-ls -la ../repo/xxm_fans_frontend/.env
-ls -la ../repo/xxm_fans_backend/static/covers
-ls -la ../repo/xxm_fans_backend/static/footprint
 ```
+> 详细说明请参考 [部署指南](#-部署指南)
 
 3. **后端环境设置**
 ```bash
@@ -243,10 +247,6 @@ venv\Scripts\activate
 # 安装Python依赖
 pip install -r requirements.txt
 
-# 环境配置
-# 编辑 env/backend.env 文件设置环境变量
-# 配置文件已通过软链接自动连接到项目目录
-
 # 数据库迁移
 python manage.py migrate
 python manage.py migrate --database=songlist_db
@@ -261,7 +261,7 @@ cd ../xxm_fans_frontend
 npm install
 ```
 
-4. **手动运行项目**
+5. **手动运行项目**
 ```bash
 # 启动后端
 cd repo/xxm_fans_backend
@@ -303,21 +303,42 @@ npm run dev
 - **WorkStatic**: 数据统计分析
 - **WorkMetricsHour**: 小时级指标追踪
 - **CrawlSession**: 爬取任务管理
+- **Account**: 账户管理
+- **FollowerMetrics**: 粉丝数指标追踪
+- **核心功能**:
+  - 跨应用关联 song_management.Song
+  - 小时级数据追踪和分析
+  - 爬取任务管理和监控
+  - B站粉丝数自动追踪（定时爬虫）
 
 #### 5. gallery - 图集管理应用
-- **GalleryCategory**: 图集分类，支持多级分类结构
-- **GalleryItem**: 图集图片项，包含图片信息、标题、描述、排序等
+- **Gallery**: 图集模型（支持自引用外键实现多级层级）
+- **GalleryItem**: 图集图片项
 - **GalleryCover**: 图集封面管理
 - **核心功能**:
-  - 多级图集分类系统，灵活的内容组织
+  - 多级图集分类系统，支持任意层级
   - 图片自动同步到数据库，支持增量同步
   - 封面自动（随机选择）或手动设置
   - 图片懒加载和占位符优化
+  - 自动缩略图生成（集成 core/thumbnail_generator.py）
+  - 面包屑导航
   - 支持图片增删改查和批量操作
   - 图片排序和分组展示
   - 自动检测文件夹变化，更新数据库
 
-#### 6. songlist - 模板化歌单应用（核心创新）
+#### 6. livestream - 直播日历应用
+- **Livestream**: 直播记录模型（包含 B站视频信息、统计数据）
+- **LivestreamService**: 直播服务（优先使用数据库，fallback 到 JSON 文件）
+- **核心功能**:
+  - 直播日历（按月份浏览）
+  - 分段视频播放器
+  - 当日歌切列表
+  - 直播截图轮播
+  - 与 song_management.SongRecord 关联
+  - 弹幕云图（预留功能）
+  - 弹幕云图导入支持
+
+#### 7. songlist - 模板化歌单应用（核心创新）
 - **设计理念**: 配置驱动的动态模型创建
 - **核心特性**: 一行配置添加艺术家、自动生成模型和API、独立权限管理
 - **配置示例**:
@@ -328,11 +349,12 @@ ARTIST_CONFIG = {
 }
 ```
 
-#### 7. core - 核心共享模块
+#### 8. core - 核心共享模块
 - **cache.py**: 缓存管理工具
 - **exceptions.py**: 自定义异常类
 - **responses.py**: 统一响应格式
 - **middleware.py**: 自定义中间件
+- **thumbnail_generator.py**: 通用缩略图生成器（全站图片缩略图自动生成）
 - **utils/**: 通用工具函数
 
 ### 前端功能模块
@@ -347,10 +369,10 @@ ARTIST_CONFIG = {
 
 #### 表现层 (presentation/)
 - **components/**: React组件
-  - common/: 通用组件（ErrorBoundary、Loading、VideoModal、MysteryBoxModal）
-  - features/: 功能组件（SongTable、RecordList、RankingChart）
+  - common/: 通用组件（ErrorBoundary、Loading、VideoModal、MysteryBoxModal、LazyImage、MusicPlayer、SmartPlayController）
+  - features/: 功能组件（SongTable、RecordList、RankingChart、TimelineChart、OriginalsList）
   - layout/: 布局组件（Navbar、Footer）
-- **pages/**: 页面组件（SongsPage、FansDIYPage）
+- **pages/**: 页面组件（SongsPage、FansDIYPage、LivestreamPage、GalleryPage、OriginalsPage、DataAnalysisPage）
 - **hooks/**: 自定义Hook（useSongFilters）
 
 #### 共享层 (shared/)
@@ -380,12 +402,25 @@ ARTIST_CONFIG = {
 - `GET /api/songlist/random/?artist=artist_id` - 随机音乐作品
 
 ### 图集管理
-- `GET /api/gallery/categories/` - 图集分类列表
-- `GET /api/gallery/categories/<id>/` - 分类详情
-- `GET /api/gallery/categories/<id>/items/` - 分类下的图片列表
-- `GET /api/gallery/items/` - 图片列表
+- `GET /api/gallery/` - 图集列表（支持多级分类）
+- `GET /api/gallery/<id>/` - 图集详情
+- `GET /api/gallery/<id>/items/` - 图集下的图片列表
 - `GET /api/gallery/items/<id>/` - 图片详情
 - `POST /api/gallery/sync/` - 同步文件夹图片到数据库
+- `/gallery/thumbnails/*` - 图集缩略图
+
+### 直播日历
+- `GET /api/livestream/` - 直播记录列表
+- `GET /api/livestream/<id>/` - 直播记录详情
+- `GET /api/livestream/calendar/` - 直播日历数据
+- `GET /api/livestream/<id>/segments/` - 分段视频列表
+- `GET /api/livestream/<id>/song-cuts/` - 当日歌切列表
+- `GET /api/livestream/<id>/screenshots/` - 直播截图列表
+
+### 原唱歌曲
+- `GET /api/originals/` - 原唱作品列表
+- `GET /api/originals/<id>/` - 原唱作品详情
+- `GET /api/originals/<id>/netease/` - 网易云音乐信息
 
 ### 其他
 - `GET /api/recommendation/` - 推荐语
@@ -396,7 +431,10 @@ ARTIST_CONFIG = {
 - `/covers/*` - 封面图片
 - `/footprint/*` - 二创图片资源
 - `/gallery/*` - 图集图片资源
+- `/gallery/thumbnails/*` - 图集缩略图
 - `/media/*` - 其他媒体文件
+- `/cloud_picture/*` - 弹幕云图资源
+- `/data_analytics/*` - 数据分析相关资源
 
 ## ⚡ 性能测试
 
@@ -429,47 +467,82 @@ run_performance_test.bat
 
 ### 部署脚本（位于 scripts/）
 - `create_symlinks.sh` - 创建应用级软链接（环境配置和媒体资源）
-- `create_infra_symlinks.sh` - 创建基础设施配置软链接（需要 root 权限）
+- `create_infra_symlinks.sh` - 创建基础设施配置软链接
 - `dev_start_services.sh` - 开发环境启动脚本
 - `dev_stop_services.sh` - 开发环境停止脚本
 - `build_start_services.sh` - 生产环境启动脚本
 - `build_stop_services.sh` - 生产环境停止脚本
-- `test_integration.sh` - 集成测试脚本
+- `setup_songlist_subdomain.sh` - 配置歌单子域名
 
 ### 数据管理（位于 repo/xxm_fans_backend/tools/）
 - `import_public_data.py` - 导入公开数据
-- `export_public_data.py` - 导出公开数据
-- `import_songs_from_json.py` - 从JSON导入歌曲
 - `import_song_records.py` - 导入演唱记录
-- `merge_songs.py` - 合并歌曲
+- `import_livestream_data.py` - 导入直播数据
+- `ingest_follower_data.py` - 导入粉丝数据
+- `download_covers.py` - 下载封面图片
+- `migrate_livestream_cover.py` - 迁移直播封面
 
-### 图片处理
-- `download_img.py` - 下载图片
-- `compress_images.py` - 压缩图片
-- `update_cover_urls.py` - 更新封面URL
-- `download_covers.py` - 下载封面
-- `download_covers_and_update_json.py` - 下载封面并更新JSON
+### 图片处理（位于 tools/）
+- `download_workstatic_covers.py` - 下载投稿封面
+- `reorganize_gallery_structure.py` - 重组图集结构
+- `reorganize_weibo_gallery.py` - 重组微博图集
+- `update_gallery_database.py` - 更新图集数据库
 
-### B站集成
-- `bilibili_importer.py` - B站视频导入
+### B站集成（位于 repo/xxm_fans_backend/tools/bilibili/）
+- **api_client.py** - B站 API 客户端（获取视频信息、分P列表等）
+- **cover_downloader.py** - 封面下载工具类
+- **models.py** - B站数据模型
 
 **BV号导入功能**：
 - 支持通过B站BV号批量导入演唱记录
 - 自动解析视频分P标题，提取歌曲名称和演出日期
 - 支持的视频标题格式：`歌曲名称-YYYY年M月D日`
-  - 示例：`小幸运-2025年6月12日`、`晴天-2024年12月25日`
-- 自动下载封面图片
-- 支持冲突处理和手动关联歌曲
-- 详细的使用说明请参考 [BV号导入视频标题格式说明](doc/BV号导入视频标题格式说明.md)
+- 详细的使用说明请参考 [BV号导入视频标题格式说明](doc/bugs-report/BV号导入视频标题格式说明.md)
 
-### 数据库管理
-- `check_migration_status.py` - 检查迁移状态
-- `migrate_main_to_song_management.py` - 迁移main到song_management
-- `rebuild.sh` - 重建脚本
+### 弹幕云图同步（位于 scripts/）
+- `auto_sync_gallery.py` - 自动同步图集数据
+- `sync_cloud_picture.py` - 同步弹幕云图
+- `import_cloud_picture_to_livestream.py` - 导入弹幕云图到直播日历
 
-### 数据复制和验证（位于 scripts/）
-- `copy_fansdiy_data.py` - 复制 fansDIY 数据
-- `verify_fansdiy_data.py` - 验证数据复制结果
+### 定时爬虫（位于 scripts/）
+- `bilibili_tiered_cron.sh` - 分层爬虫定时任务脚本（每小时）
+- `bilibili_views_cron.sh` - 作品数据爬虫定时任务脚本
+- `bilibili_fans_count_cron.sh` - B站粉丝数爬虫定时任务脚本
+
+### 爬虫（位于 spider/）
+- `run_tiered_crawler.py` - 分层爬虫主控脚本
+- `run_views_crawler.py` - 作品数据爬虫主控脚本
+- `get_bilibili_fans_count.py` - B站粉丝数爬虫
+- `bilibili_dynamic_monitor.py` - B站动态监控
+- `weibo_monitor_selenium.py` - 微博监控（Selenium）
+
+#### 分层爬虫优化方案
+
+针对B站投稿数据爬虫的优化方案，根据发布时间将作品分为**热数据**和**冷数据**，采用不同的爬取频率：
+
+| 数据类型 | 发布时间 | 爬取频率 | 爬取时段 |
+|---------|---------|---------|---------|
+| **热数据** | ≤ 7天 | **每小时** | 全天24小时 |
+| **冷数据** | > 7天 | **每天3次** | 00:00, 08:00, 16:00 |
+
+**优势**：
+- 大幅降低服务器压力（平时每小时只爬取0-1条）
+- 保证新作品实时性
+- 历史数据适度更新
+
+```bash
+# 查看分层统计信息
+python spider/run_tiered_crawler.py --stats
+
+# 只爬取热数据（7天内发布的作品）
+python spider/run_tiered_crawler.py --hot
+
+# 只爬取冷数据（7天前发布的作品）
+python spider/run_tiered_crawler.py --cold
+
+# 根据当前时间自动选择（用于定时任务）
+python spider/run_tiered_crawler.py --scheduled
+```
 
 ## 🚀 部署指南
 
@@ -533,6 +606,21 @@ cd scripts
 ```bash
 cd scripts
 sudo ./create_infra_symlinks.sh
+```
+
+#### 启用定时爬虫（需要 root 权限）
+```bash
+# 启用并启动分层爬虫定时任务
+sudo systemctl enable --now infra/systemd/bilibili-tiered-crawler.timer
+
+# 启用并启动作品数据爬虫定时任务
+sudo systemctl enable --now infra/systemd/bilibili-views-crawler.timer
+
+# 启用并启动粉丝数爬虫定时任务
+sudo systemctl enable --now infra/systemd/bilibili-spider.timer
+
+# 查看定时任务状态
+systemctl list-timers --all | grep bilibili
 ```
 
 #### 验证软链接
@@ -703,87 +791,37 @@ export DJANGO_ALLOWED_HOSTS='your-domain.com'
 ### 项目文档
 - `README.md` - 项目说明文档（本文件）
 - `AGENTS.md` - 项目上下文文档（AI交互使用，包含完整项目信息）
-- `IFLOW.md` - 项目技术文档
 
-### 后端文档
-
-位于 `repo/xxm_fans_backend/doc/` 目录：
-
-
-
-- `songlist独立表架构说明.md` - 模板化歌单系统完整文档
-
-- `API文档.md` - API接口详细文档
-
-- `ADMIN功能文档.md` - Admin功能说明
-
-- `项目结构重构方案.md` - 项目架构设计
-
-- `REFACTORING_PLAN-2.0.md` - 重构计划
-
-- `todolist.md` - 项目待办事项
-
-
-
-### 功能文档
-
-位于 `doc/` 目录：
-
+### 功能文档（位于 doc/）
 - `BV号导入视频标题格式说明.md` - BV号导入功能详细说明
 - `DEPLOYMENT_SYMLINKS.md` - 部署软链接配置说明
 - `数据库SQLite到MySQL迁移方案.md` - 数据库迁移方案
-- `后台管理系统重构方案.md` - 后台管理系统重构方案
-- `gallery_implementation_plan.md` - 图集功能实现计划
-- `gallery_implementation_report.md` - 图集功能实现报告
-- `gallery_multilevel_optimization.md` - 图集多级分类优化
-- `gallery_thumbnail_implementation_plan.md` - 图集缩略图实现计划
+- `gallery/` - 图集功能文档
+- `songlist/` - 模板化歌单文档
+- `feature/` - 功能文档
 
-各应用也有独立的文档目录：
-- `doc/core/` - core模块文档
-- `doc/song_management/` - song_management应用文档
-- `doc/fansDIY/` - fansDIY应用文档
-- `doc/site_settings/` - site_settings应用文档
-- `doc/data_analytics/` - data_analytics应用文档
-- `doc/gallery/` - gallery应用文档
-- `doc/songlist/` - songlist应用文档
-
-### 前端文档
-位于 `repo/xxm_fans_frontend/doc/` 目录：
-- `api_adaptation_plan.md` - API 适配计划
-- `API_doc.md` - API 文档
-- `project_analysis_report.md` - 项目分析报告
-- `real_api_implementation_plan.md` - 真实 API 实现计划
-- `redundant_files_analysis.md` - 冗余文件分析
-- `wechat_browser_cache_solution.md` - 微信浏览器缓存问题解决方案
+### 爬虫文档（位于 spider/）
+- `TIERED_CRAWLER_README.md` - 分层爬虫详细文档
+- `README.md` - 爬虫使用文档
 
 ### 基础设施文档
 - `infra/gunicorn/README.md` - Gunicorn 配置说明
 - `infra/gunicorn/CHANGELOG.md` - Gunicorn 优化记录
 - `infra/nginx/FOOTPRINT_CONFIG.md` - 二创资源配置说明
 
-### 脚本文档
-- `scripts/README.md` - 部署脚本说明
-- `scripts/FANS_DIY_DATA_COPY.md` - 数据复制文档
-- `DEPLOYMENT_SYMLINKS.md` - 部署软链接配置说明
-
 ## 🌟 项目亮点
 
-1. **模块化设计**: 核心功能拆分为独立应用，便于维护和扩展
+1. **模块化设计**: 核心功能拆分为独立应用（7个核心应用），便于维护和扩展
 2. **分层架构**: 清晰的models-services-api分层，代码结构清晰
 3. **模板化歌单系统**: 配置驱动的动态模型创建，一行配置即可添加新艺术家
 4. **统一响应格式**: 标准化的API响应格式，便于前端对接
-5. **自定义异常**: 完善的异常处理机制，提升代码健壮性
-6. **Admin优化**: 批量标记功能优化，支持搜索和左右分栏布局
-7. **DDD架构**: 前端采用领域驱动设计，严格遵循依赖倒置原则
-8. **性能测试**: 内置完整的Locust性能测试套件
-9. **工具脚本**: 提供丰富的工具脚本，提升开发效率
-10. **生产优化**: 前端生产构建包含文件名哈希、代码分割、压缩等优化
-11. **Gunicorn配置**: 集中化的Gunicorn配置，便于性能调优
-12. **双环境支持**: 完善的开发和生产环境配置和脚本
-13. **图集管理**: 完整的图集管理系统，支持多级分类、自动同步和懒加载
-14. **二创资源**: 专门的二创图片资源路径和Nginx配置
-15. **配置集中管理**: 统一的 `env/` 目录管理所有环境变量，通过软链接实现配置共享
-16. **高度可定制**: 框架化设计，支持快速定制和功能扩展，适用于不同艺术家和品牌
+5. **DDD架构**: 前端采用领域驱动设计，严格遵循依赖倒置原则
+6. **性能测试**: 内置完整的Locust性能测试套件
+7. **图集管理**: 完整的图集管理系统，支持多级分类、自动缩略图生成
+8. **直播日历**: 完整的直播记录管理系统，支持BV号导入
+9. **智能爬虫系统**: 分层爬虫优化（热数据每小时、冷数据每天3次）、定时任务管理、粉丝数追踪
+11. **配置集中管理**: 统一的 `env/` 目录管理所有环境变量
+12. **AI Agent 技能**: 内置自定义技能模块，支持 B站工具、UI优化等
 
 ## 🎨 网站信息
 
@@ -809,17 +847,17 @@ export DJANGO_ALLOWED_HOSTS='your-domain.com'
 3. 增加更多数据可视化功能和仪表盘
 4. 支持用户评论、点赞和互动功能
 5. 移动端适配优化和PWA支持
-6. 数据分析功能增强(WorkStatic, WorkMetricsHour, CrawlSession模型的使用)
+6. 数据分析功能增强（更多可视化图表和数据分析维度）
 7. 添加单元测试和集成测试
 8. 实现CI/CD自动化部署
-9. CDN集成优化图片加载速度
-10. 实现图片自动压缩和格式转换
-11. 支持多语言国际化
-12. 增加用户系统和权限管理
-13. 支持RSS订阅和邮件通知
-14. 图集功能增强：图片水印、批量编辑、相册分享
-15. 图集缩略图自动生成和优化
-16. 图片AI分类和智能标签系统
+9. 实现图片自动压缩和格式转换
+10. 支持多语言国际化
+11. 增加用户系统和权限管理
+12. 支持RSS订阅和邮件通知
+13. 图集功能增强：图片水印、批量编辑、相册分享
+14. 直播功能增强：弹幕分析、热门片段提取
+15. 音乐播放器增强：歌词显示、播放列表、收藏功能
+16. 搜索功能增强：全文搜索、语音搜索、智能推荐
 
 ## 🤝 贡献指南
 

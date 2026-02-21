@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>弹窗位置测试</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: sans-serif;
+            background: #f2f9f1;
+            min-height: 100vh;
+        }
+        
+        /* 模拟父元素的 backdrop-blur */
+        .parent-with-blur {
+            backdrop-filter: blur(12px);
+            background: rgba(255,255,255,0.4);
+            padding: 20px;
+            margin: 100px;
+            border-radius: 20px;
+        }
+        
+        /* 触发按钮 */
+        .trigger-btn {
+            padding: 8px 16px;
+            background: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        /* 弹窗遮罩 - 使用 fixed 定位 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.2);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+        
+        /* 弹窗内容 */
+        .modal-content {
+            width: 400px;
+            max-width: calc(100vw - 32px);
+            background: white;
+            border-radius: 32px;
+            padding: 24px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+            position: relative;
+        }
+        
+        .close-btn {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: #f5f5f5;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        
+        .year-grid, .month-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-top: 12px;
+        }
+        
+        .year-grid button, .month-grid button {
+            padding: 8px;
+            border: none;
+            border-radius: 12px;
+            background: #f5f5f5;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        .year-grid button.active, .month-grid button.active {
+            background: #d97706;
+            color: white;
+        }
+        
+        h3 {
+            margin: 0;
+            color: #8eb69b;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .section {
+            margin-bottom: 24px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 模拟有 backdrop-blur 的父元素 -->
+    <div class="parent-with-blur">
+        <p>这个父元素有 backdrop-filter: blur(12px)</p>
+        <p>这会导致子元素的 fixed 定位相对于它而不是视口</p>
+        <button class="trigger-btn" onclick="toggleModal()">打开弹窗</button>
+    </div>
+    
+    <!-- 弹窗应该被渲染到 body 下，而不是在这个 div 内 -->
+    <div id="modal-container"></div>
+    
+    <script>
+        let isOpen = false;
+        
+        function toggleModal() {
+            isOpen = !isOpen;
+            renderModal();
+        }
+        
+        function closeModal() {
+            isOpen = false;
+            renderModal();
+        }
+        
+        function renderModal() {
+            const container = document.getElementById('modal-container');
+            
+            if (!isOpen) {
+                container.innerHTML = '';
+                document.body.style.overflow = '';
+                return;
+            }
+            
+            // 锁定背景滚动
+            document.body.style.overflow = 'hidden';
+            
+            const currentYear = new Date().getFullYear();
+            const currentMonth = new Date().getMonth();
+            const minYear = 2019;
+            
+            let yearsHtml = '';
+            for (let y = minYear; y <= currentYear; y++) {
+                const active = y === 2026 ? 'active' : ''; // 模拟选中 2026
+                yearsHtml += `<button class="${active}">${y}</button>`;
+            }
+            
+            let monthsHtml = '';
+            for (let m = 0; m < 12; m++) {
+                const active = m === 1 ? 'active' : ''; // 模拟选中 2月
+                monthsHtml += `<button class="${active}">${m + 1}</button>`;
+            }
+            
+            container.innerHTML = `
+                <div class="modal-overlay" onclick="closeModal()">
+                    <div class="modal-content" onclick="event.stopPropagation()">
+                        <button class="close-btn" onclick="closeModal()">×</button>
+                        
+                        <div class="section">
+                            <h3>Year</h3>
+                            <div class="year-grid">
+                                ${yearsHtml}
+                            </div>
+                        </div>
+                        
+                        <div class="section">
+                            <h3>Month</h3>
+                            <div class="month-grid">
+                                ${monthsHtml}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // ESC 关闭
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && isOpen) {
+                closeModal();
+            }
+        });
+    </script>
+    
+    <h2 style="margin: 50px;">测试结果说明：</h2>
+    <ul style="margin: 50px; line-height: 2;">
+        <li>✅ 如果弹窗在屏幕正中间，说明 fixed + flex 居中工作正常</li>
+        <li>❌ 如果弹窗在父元素内偏右，说明 backdrop-blur 导致了层叠上下文问题</li>
+    </ul>
+</body>
+</html>

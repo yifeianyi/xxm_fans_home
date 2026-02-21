@@ -1,0 +1,15 @@
+[Unit]
+Description=B站投稿数据爬虫
+After=network.target
+
+[Service]
+Type=oneshot
+User=www-data
+WorkingDirectory=/home/yifeianyi/Desktop/xxm_fans_home
+ExecStart=/home/yifeianyi/Desktop/xxm_fans_home/repo/xxm_fans_backend/venv/bin/python spider/run_views_crawler.py --full
+Environment=PYTHONPATH=/home/yifeianyi/Desktop/xxm_fans_home/repo/xxm_fans_backend
+StandardOutput=append:/home/yifeianyi/Desktop/xxm_fans_home/logs/spider/systemd_output.log
+StandardError=append:/home/yifeianyi/Desktop/xxm_fans_home/logs/spider/systemd_error.log
+
+[Install]
+WantedBy=multi-user.target

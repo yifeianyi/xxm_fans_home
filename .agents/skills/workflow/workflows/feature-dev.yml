@@ -1,0 +1,205 @@
+---
+name: feature-dev
+description: 新功能开发流程（支持跨前后端协作）
+triggers:
+  - /workflow feature-dev
+  - /workflow new-feature
+---
+
+# 新功能开发 Workflow
+# 适用于需要同时修改前后端的完整功能开发
+
+steps:
+  - id: requirement-analysis
+    name: 需求分析
+    description: 明确功能需求和技术方案
+    prompt: |
+      请与用户确认以下信息：
+      1. 功能名称和描述
+      2. 涉及的后端 API 变更（如有）
+      3. 涉及的前端页面/组件（如有）
+      4. 是否需要数据库模型变更
+      5. 预计影响范围
+      
+      分析完成后，输出：
+      - 功能概述
+      - 技术方案概要
+      - 涉及的仓库清单
+
+  - id: branch-creation
+    name: 创建功能分支
+    description: 基于 main 创建 feature 分支
+    prompt: |
+      根据需求分析结果，为每个受影响的仓库创建功能分支：
+      
+      分支命名规范：feat/<功能简称>
+      例如：feat/song-search, feat/user-profile
+      
+      执行命令：
+      ```bash
+      cd repo/xxm_fans_backend
+      git checkout -b feat/<name>
+      
+      cd repo/xxm_fans_frontend
+      git checkout -b feat/<name>
+      ```
+      
+      确认分支创建成功并输出当前分支状态。
+
+  - id: backend-impl
+    name: 后端实现（如需要）
+    description: 开发后端 API 和模型
+    condition: requires_backend_changes
+    prompt: |
+      在 repo/xxm_fans_backend 中实现后端功能：
+      
+      遵循以下规范（参考 @django-model-formatter skill）：
+      1. **模型层** (models/): 定义数据模型，不包含业务逻辑
+      2. **服务层** (services/): 实现业务逻辑
+      3. **API 层** (api/): 只处理 HTTP 请求/响应
+      4. **响应格式**: 使用 core/responses.py 的函数
+      5. **异常处理**: 使用 core/exceptions.py 的异常类
+      
+      完成后检查：
+      - [ ] 模型定义正确
+      - [ ] API 响应格式统一
+      - [ ] 异常处理完善
+      - [ ] 代码符合项目规范
+
+  - id: frontend-impl
+    name: 前端实现（如需要）
+    description: 开发前端页面和组件
+    condition: requires_frontend_changes
+    prompt: |
+      在 repo/xxm_fans_frontend 中实现前端功能：
+      
+      遵循项目架构（DDD）：
+      1. **领域层** (domain/): 定义类型和接口
+      2. **基础设施层** (infrastructure/): 实现 API 服务
+      3. **表现层** (presentation/): 组件和页面
+      4. **样式**: 使用 Tailwind CSS
+      
+      规范检查：
+      - [ ] TypeScript 严格模式
+      - [ ] 组件使用 PascalCase
+      - [ ] Hooks 使用 use 前缀
+      - [ ] 样式使用 CSS 变量
+      - [ ] 导入顺序正确
+
+  - id: local-testing
+    name: 本地验证
+    description: 运行测试确保功能正常
+    prompt: |
+      执行本地验证：
+      
+      **后端测试**：
+      ```bash
+      cd repo/xxm_fans_backend
+      python manage.py test
+      # 或运行特定测试
+      ```
+      
+      **前端检查**：
+      ```bash
+      cd repo/xxm_fans_frontend
+      npx tsc --noEmit  # 类型检查
+      npm run build     # 构建检查
+      ```
+      
+      **功能验证**：
+      - [ ] API 接口正常工作
+      - [ ] 前端页面渲染正常
+      - [ ] 功能逻辑符合预期
+      
+      如有问题，修复后重新验证。
+
+  - id: code-review-check
+    name: 代码自查
+    description: 按照项目规范自查代码
+    prompt: |
+      提交前自查清单：
+      
+      **后端检查项**：
+      - [ ] 没有修改 SongRecord/Song 核心模型结构
+      - [ ] 使用统一响应格式
+      - [ ] 异常处理正确
+      - [ ] 代码风格一致
+      
+      **前端检查项**：
+      - [ ] 没有 console.log 遗留
+      - [ ] 组件 Props 定义完整
+      - [ ] 错误边界处理
+      - [ ] 响应式布局正常
+      
+      **通用检查项**：
+      - [ ] 没有敏感信息硬编码
+      - [ ] 注释清晰（复杂逻辑）
+      - [ ] 没有死代码
+
+  - id: commit-changes
+    name: 提交代码
+    description: 按规范提交到功能分支
+    prompt: |
+      分别提交各仓库的变更：
+      
+      **后端提交**：
+      ```bash
+      cd repo/xxm_fans_backend
+      git add -A
+      git commit -m "feat(<scope>): <描述>
+      
+      - 变更点 1
+      - 变更点 2"
+      git push origin feat/<name>
+      ```
+      
+      **前端提交**：
+      ```bash
+      cd repo/xxm_fans_frontend
+      git add -A
+      git commit -m "feat(<scope>): <描述>
+      
+      - 变更点 1
+      - 变更点 2"
+      git push origin feat/<name>
+      ```
+      
+      **主仓库提交**（更新子模块引用）：
+      ```bash
+      cd /home/yifeianyi/Desktop/xxm_fans_home
+      git add repo/xxm_fans_backend repo/xxm_fans_frontend
+      git commit -m "chore(submodule): update for <feature>
+      
+      Backend:
+      - 后端变更描述
+      
+      Frontend:
+      - 前端变更描述"
+      git push origin feat/<name>
+      ```
+
+  - id: summary
+    name: 完成总结
+    description: 输出开发完成摘要
+    prompt: |
+      功能开发流程已完成！
+      
+      **开发摘要**：
+      - 功能名称：{feature_name}
+      - 分支：feat/{feature_name}
+      - 涉及仓库：{affected_repos}
+      
+      **后续步骤**：
+      1. 创建 Pull Request 进行代码审查
+      2. 合并后删除功能分支
+      3. 如有需要，更新相关文档
+      
+      **快捷命令**：
+      ```bash
+      # 查看变更
+      git log --oneline -5
+      
+      # 创建 PR 后合并到 main
+      git checkout main && git pull
+      git merge feat/{feature_name}
+      ```

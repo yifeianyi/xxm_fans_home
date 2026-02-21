@@ -1,0 +1,311 @@
+---
+name: api-development
+description: 后端 API 开发专用流程（遵循项目分层架构）
+triggers:
+  - /workflow api-dev
+  - /workflow api
+---
+
+# 后端 API 开发 Workflow
+# 专注于 Django REST API 开发，遵循项目分层架构
+
+steps:
+  - id: api-design
+    name: API 设计
+    description: 设计 API 接口规范
+    prompt: |
+      设计新的 API 接口：
+      
+      **需求确认**：
+      1. API 功能描述
+      2. HTTP 方法（GET/POST/PUT/DELETE）
+      3. URL 路径设计（RESTful）
+      4. 请求参数（Query/Body）
+      5. 响应数据结构
+      6. 权限要求
+      
+      **设计规范**：
+      - URL 使用小写，单词用下划线分隔
+      - 复数名词表示资源集合（如 /api/songs/）
+      - 动作使用 HTTP 方法表示
+      
+      **输出 API 文档**：
+      ```
+      POST /api/songs/
+      
+      Request:
+      {
+        "title": "string",
+        "artist": "string",
+        ...
+      }
+      
+      Response 200:
+      {
+        "code": 0,
+        "message": "success",
+        "data": { ... }
+      }
+      ```
+
+  - id: model-check
+    name: 模型层检查
+    description: 确认数据模型是否需要变更
+    prompt: |
+      检查数据模型：
+      
+      **现有模型检查**：
+      - [ ] 查看现有模型是否能满足需求
+      - [ ] 检查是否需要新增模型
+      - [ ] 检查是否需要修改模型字段
+      
+      **⚠️ 重要约束**：
+      根据项目规范，**不能修改** SongRecord 和 Song 核心模型结构！
+      
+      **如果需要新模型**（参考 @django-model-formatter skill）：
+      1. 在 models/ 目录创建模型
+      2. 遵循 PEP 8 命名规范
+      3. 添加模型 docstring
+      4. 定义 Meta 类（verbose_name 等）
+      5. 添加 __str__ 方法
+      
+      **生成迁移**：
+      ```bash
+      cd repo/xxm_fans_backend
+      python manage.py makemigrations
+      python manage.py migrate
+      ```
+
+  - id: service-impl
+    name: 服务层实现
+    description: 实现业务逻辑
+    prompt: |
+      在 services/ 目录实现业务逻辑：
+      
+      **分层架构原则**：
+      - models/：只包含数据模型，**无业务逻辑**
+      - services/：包含所有业务逻辑
+      - api/：只负责 HTTP 请求处理
+      
+      **服务层规范**：
+      ```python
+      # services/song_service.py
+      from core.exceptions import BusinessException
+      
+      class SongService:
+          @staticmethod
+          def create_song(data):
+              """创建歌曲
+              
+              Args:
+                  data: 歌曲数据字典
+                  
+              Returns:
+                  Song: 创建的歌曲实例
+                  
+              Raises:
+                  BusinessException: 业务异常
+              """
+              # 业务逻辑实现
+              pass
+      ```
+      
+      **异常处理**：
+      - 使用 core/exceptions.py 中的异常类
+      - 业务异常使用 BusinessException
+      - 参数错误使用 ValidationException
+
+  - id: api-impl
+    name: API 层实现
+    description: 实现 API 视图
+    prompt: |
+      在 api/ 目录实现 API 视图：
+      
+      **响应格式规范**（使用 core/responses.py）：
+      ```python
+      from core.responses import success_response, error_response, paginated_response
+      
+      # 成功响应
+      return success_response(data={"id": 1, "name": "Song"})
+      
+      # 错误响应
+      return error_response(message="歌曲不存在", code=404)
+      
+      # 分页响应
+      return paginated_response(
+          data=songs,
+          total=total_count,
+          page=page,
+          page_size=page_size
+      )
+      ```
+      
+      **视图实现模式**：
+      ```python
+      from rest_framework.views import APIView
+      from rest_framework.request import Request
+      
+      class SongListAPI(APIView):
+          def get(self, request):
+              # 调用 service 层
+              # 返回统一格式
+              pass
+          
+          def post(self, request):
+              # 参数校验
+              # 调用 service 层
+              # 返回统一格式
+              pass
+      ```
+
+  - id: url-config
+    name: URL 配置
+    description: 配置路由
+    prompt: |
+      配置 API 路由：
+      
+      **在 urls.py 中添加**：
+      ```python
+      from django.urls import path
+      from .api import SongListAPI, SongDetailAPI
+      
+      urlpatterns = [
+          path('songs/', SongListAPI.as_view(), name='song-list'),
+          path('songs/<int:pk>/', SongDetailAPI.as_view(), name='song-detail'),
+      ]
+      ```
+      
+      **路由规范**：
+      - API 路径统一前缀 /api/
+      - 资源名使用复数
+      - 单条记录使用 <int:pk> 参数
+
+  - id: api-testing
+    name: API 测试
+    description: 测试 API 功能
+    prompt: |
+      测试 API 接口：
+      
+      **本地测试**：
+      ```bash
+      # 启动开发服务器
+      python manage.py runserver
+      
+      # 使用 curl 测试
+      curl -X GET http://localhost:8000/api/songs/
+      
+      # 或使用 httpie
+      http POST http://localhost:8000/api/songs/ title="Test" artist="Test"
+      ```
+      
+      **响应检查**：
+      - [ ] 返回格式符合统一响应规范
+      - [ ] HTTP 状态码正确
+      - [ ] 错误处理正确
+      - [ ] 边界情况处理（空数据、无效参数等）
+      
+      **Django 测试**（可选）：
+      ```python
+      # tests/test_api.py
+      from django.test import TestCase
+      
+      class SongAPITests(TestCase):
+          def test_get_songs(self):
+              response = self.client.get('/api/songs/')
+              self.assertEqual(response.status_code, 200)
+      ```
+
+  - id: admin-register
+    name: Admin 注册（如需要）
+    description: 在 Django Admin 注册模型
+    condition: new_model
+    prompt: |
+      在 admin.py 注册模型：
+      
+      ```python
+      from django.contrib import admin
+      from .models import NewModel
+      
+      @admin.register(NewModel)
+      class NewModelAdmin(admin.ModelAdmin):
+          list_display = ('id', 'name', 'created_at')
+          list_filter = ('status',)
+          search_fields = ('name',)
+          ordering = ('-created_at',)
+      ```
+      
+      检查：
+      - [ ] Admin 界面能正常访问
+      - [ ] 列表展示字段正确
+      - [ ] 筛选和搜索功能正常
+
+  - id: code-review
+    name: 代码自查
+    description: 按后端规范自查代码
+    prompt: |
+      后端代码自查清单：
+      
+      **架构合规**：
+      - [ ] 业务逻辑在 services/ 层
+      - [ ] API 层只处理 HTTP
+      - [ ] 模型层无业务逻辑
+      
+      **响应格式**：
+      - [ ] 使用 core/responses.py 函数
+      - [ ] 成功使用 success_response()
+      - [ ] 错误使用 error_response()
+      - [ ] 分页使用 paginated_response()
+      
+      **异常处理**：
+      - [ ] 使用 core/exceptions.py 异常类
+      - [ ] 业务异常抛出 BusinessException
+      - [ ] API 层捕获异常并转换响应
+      
+      **其他**：
+      - [ ] 没有修改 Song/SongRecord 核心模型
+      - [ ] 代码风格一致
+      - [ ] 添加了必要的注释
+
+  - id: commit
+    name: 提交代码
+    description: 按规范提交
+    prompt: |
+      提交 API 开发代码：
+      
+      ```bash
+      cd repo/xxm_fans_backend
+      
+      git add -A
+      git commit -m "feat(api): add <功能描述> API
+      
+      - 实现 <功能> 接口
+      - URL: <api-path>
+      - 支持 <操作列表>
+      
+      Closes #<issue-number>"
+      
+      git push origin <branch>
+      ```
+
+  - id: summary
+    name: 完成总结
+    description: 输出开发完成摘要
+    prompt: |
+      API 开发完成！
+      
+      **API 信息**：
+      - 接口路径：<api-path>
+      - 支持方法：<methods>
+      - 分支：<branch>
+      
+      **实现内容**：
+      - [x] 模型定义/更新
+      - [x] 服务层实现
+      - [x] API 层实现
+      - [x] 路由配置
+      - [x] 本地测试通过
+      
+      **下一步**：
+      1. 创建 Pull Request
+      2. 与前端联调（如需要）
+      3. 更新 API 文档

@@ -1,0 +1,455 @@
+---
+name: frontend-ui-update
+description: 前端 UI 修改流程（页面、组件、样式调整）
+triggers:
+  - /workflow ui-update
+  - /workflow ui
+  - /workflow frontend-update
+---
+
+# 前端 UI 修改 Workflow
+# 适用于页面开发、组件修改、样式调整等 UI 相关任务
+
+steps:
+  - id: ui-requirement
+    name: UI 需求确认
+    description: 明确 UI 修改需求
+    prompt: |
+      确认 UI 修改需求：
+      
+      **基本信息**：
+      1. 修改类型（新增页面/修改组件/样式调整）
+      2. 目标页面/组件名称
+      3. 修改目的（功能需求/视觉优化/交互改进）
+      
+      **设计参考**：
+      4. 是否有设计稿（Figma/PSD/截图）
+      5. 参考页面或组件
+      6. 是否需要响应式适配
+      
+      **技术信息**：
+      7. 是否需要新增依赖（图表库/动画库等）
+      8. 是否涉及 API 调用
+      9. 浏览器兼容性要求
+      
+      **项目设计规范**：
+      - CSS 变量：`--sage-bg`, `--meadow-green`, `--peach-accent`
+      - Mobile-first 响应式设计
+      - 使用 Tailwind CSS
+      
+      输出：UI 修改任务清单
+
+  - id: env-check
+    name: 环境检查
+    description: 确保开发环境就绪
+    prompt: |
+      检查前端开发环境：
+      
+      ```bash
+      cd repo/xxm_fans_frontend
+      
+      # 检查依赖
+      ls node_modules/ > /dev/null 2>&1 || npm install
+      
+      # 检查环境文件
+      ls .env > /dev/null 2>&1 || echo "需要创建 .env 文件"
+      
+      # 启动开发服务器
+      npm run dev
+      ```
+      
+      确认：
+      - [ ] 依赖已安装
+      - [ ] 开发服务器正常启动
+      - [ ] http://localhost:5173 可访问
+
+  - id: component-analysis
+    name: 组件分析
+    description: 分析现有组件和需要修改的范围
+    prompt: |
+      分析 UI 修改范围：
+      
+      **查找相关组件**：
+      ```bash
+      # 查找现有组件
+      find src -name "*<component>*" -type f
+      
+      # 查找相关样式
+      grep -r "<class-name>" src --include="*.css" --include="*.scss"
+      ```
+      
+      **依赖分析**：
+      - 该组件被哪些页面引用
+      - 修改是否影响其他功能
+      - 是否需要重构组件结构
+      
+      **复用检查**：
+      - 是否有可复用的现有组件（检查 presentation/components/common/）
+      - 是否需要提取新通用组件
+
+  - id: domain-types
+    name: 更新领域类型（如需要）
+    description: 如有数据变更，更新 TypeScript 类型
+    condition: data_type_changes
+    prompt: |
+      更新领域类型定义：
+      
+      **在 domain/types.ts 中**：
+      ```typescript
+      // 新增或修改接口
+      export interface NewComponentProps {
+        id: string;
+        title: string;
+        data: SomeDataType;
+        onAction: (id: string) => void;
+      }
+      
+      // 新增领域模型（如需要）
+      export interface NewDataModel {
+        // 字段定义
+      }
+      ```
+      
+      **检查**：
+      - [ ] 类型命名使用 PascalCase
+      - [ ] 可选字段使用 ? 标记
+      - [ ] 复杂类型使用 type 或 interface 清晰定义
+
+  - id: api-service
+    name: API 服务更新（如需要）
+    description: 如有数据调用，更新 API 服务
+    condition: api_call_needed
+    prompt: |
+      在 infrastructure/api/ 更新 API 服务：
+      
+      **扩展现有服务**：
+      ```typescript
+      // infrastructure/api/RealSongService.ts
+      
+      async fetchNewData(params: QueryParams): Promise<ApiResult<NewData[]>> {
+        const response = await fetch(`${API_BASE}/new-endpoint?${queryString}`);
+        return response.json();
+      }
+      ```
+      
+      **或在领域层定义接口**：
+      ```typescript
+      // domain/api/ISongService.ts
+      interface ISongService {
+        fetchNewData(params: QueryParams): Promise<ApiResult<NewData[]>>;
+      }
+      ```
+      
+      **检查**：
+      - [ ] 返回类型使用 ApiResult<T>
+      - [ ] 错误处理完善
+      - [ ] URL 使用配置常量
+
+  - id: component-impl
+    name: 组件实现
+    description: 开发或修改 React 组件
+    prompt: |
+      实现 UI 组件：
+      
+      **组件结构**（遵循项目规范）：
+      ```typescript
+      // presentation/components/features/NewComponent.tsx
+      import React, { useState, useCallback, useMemo } from 'react';
+      import { SomeType } from '../../../domain/types';
+      import { someService } from '../../../infrastructure/api';
+      
+      interface NewComponentProps {
+        // Props 定义
+      }
+      
+      export const NewComponent: React.FC<NewComponentProps> = ({ prop1, prop2 }) => {
+        // State 定义
+        const [state, setState] = useState<SomeType>();
+        
+        // 缓存计算
+        const computed = useMemo(() => {
+          // 计算逻辑
+        }, [dependency]);
+        
+        // 事件处理缓存
+        const handleClick = useCallback(() => {
+          // 处理逻辑
+        }, [dependency]);
+        
+        return (
+          <div className="...">
+            {/* JSX */}
+          </div>
+        );
+      };
+      ```
+      
+      **规范检查**：
+      - [ ] 组件名使用 PascalCase
+      - [ ] Props 定义接口
+      - [ ] 使用 TypeScript 严格模式
+      - [ ] 使用 useCallback 缓存事件
+      - [ ] 使用 useMemo 缓存计算
+
+  - id: styling
+    name: 样式实现
+    description: 使用 Tailwind CSS 实现样式
+    prompt: |
+      实现组件样式：
+      
+      **Tailwind CSS 规范**：
+      ```tsx
+      // 使用项目配色变量
+      <div className="bg-[var(--sage-bg)] text-[var(--meadow-green)]">
+        
+      // 响应式设计（Mobile-first）
+      <div className="w-full md:w-1/2 lg:w-1/3">
+        
+      // 状态样式
+      <button className="
+        px-4 py-2 
+        bg-green-500 
+        hover:bg-green-600 
+        active:bg-green-700
+        disabled:opacity-50
+        transition-colors
+      ">
+      
+      // 复杂样式可提取为 className 模板
+      const baseStyles = "px-4 py-2 rounded-lg transition-all";
+      const variantStyles = {
+        primary: "bg-green-500 text-white hover:bg-green-600",
+        secondary: "bg-gray-200 text-gray-800 hover:bg-gray-300"
+      };
+      ```
+      
+      **项目配色参考**：
+      - `--sage-bg`: 主背景色
+      - `--meadow-green`: 主色调
+      - `--peach-accent`: 强调色
+      
+      **检查**：
+      - [ ] 使用 CSS 变量保持风格一致
+      - [ ] 响应式断点使用 md:, lg:
+      - [ ] 交互状态样式完整（hover, active, focus, disabled）
+
+  - id: page-integration
+    name: 页面集成（如需要）
+    description: 将组件集成到页面
+    condition: new_page_or_integration
+    prompt: |
+      在页面中集成组件：
+      
+      **在 presentation/pages/ 中**：
+      ```typescript
+      // presentation/pages/NewPage.tsx
+      import React from 'react';
+      import { NewComponent } from '../components/features/NewComponent';
+      import { useNewPageData } from '../hooks/useNewPageData';
+      
+      export const NewPage: React.FC = () => {
+        const { data, loading, error } = useNewPageData();
+        
+        if (loading) return <Loading />;
+        if (error) return <ErrorMessage error={error} />;
+        
+        return (
+          <div className="page-container">
+            <NewComponent data={data} />
+          </div>
+        );
+      };
+      ```
+      
+      **更新路由**（infrastructure/config/routes.ts）：
+      ```typescript
+      export const routes = {
+        // ... 现有路由
+        newPage: '/new-page',
+      };
+      ```
+
+  - id: type-check
+    name: TypeScript 类型检查
+    description: 确保类型安全
+    prompt: |
+      运行类型检查：
+      
+      ```bash
+      cd repo/xxm_fans_frontend
+      
+      # 类型检查
+      npx tsc --noEmit
+      ```
+      
+      **常见问题处理**：
+      - `Property 'x' does not exist` → 检查 Props 定义
+      - `Type 'X' is not assignable` → 检查类型兼容性
+      - `Cannot find module` → 检查导入路径
+      
+      修复所有类型错误后才能继续。
+
+  - id: visual-testing
+    name: 视觉测试
+    description: 验证 UI 效果
+    prompt: |
+      验证 UI 效果：
+      
+      **功能验证**：
+      - [ ] 组件正常渲染
+      - [ ] 数据展示正确
+      - [ ] 交互事件正常触发
+      - [ ] 错误状态显示正常
+      
+      **视觉验证**：
+      - [ ] 与设计稿一致（如有）
+      - [ ] 配色符合项目规范
+      - [ ] 间距、字体大小正确
+      - [ ] 图片加载正常（如有）
+      
+      **响应式验证**：
+      - [ ] 移动端显示正常
+      - [ ] 平板端显示正常
+      - [ ] 桌面端显示正常
+      - [ ] 窗口缩放时布局自适应
+      
+      **浏览器验证**（如可能）：
+      - [ ] Chrome 正常
+      - [ ] Safari 正常
+      - [ ] Firefox 正常
+
+  - id: build-check
+    name: 构建检查
+    description: 确保生产构建成功
+    prompt: |
+      验证生产构建：
+      
+      ```bash
+      cd repo/xxm_fans_frontend
+      
+      # 生产构建
+      npm run build
+      
+      # 检查构建产物
+      ls -la dist/
+      ```
+      
+      **检查项**：
+      - [ ] 构建成功无错误
+      - [ ] 无 TypeScript 错误
+      - [ ] 构建产物大小合理
+      - [ ] 静态资源路径正确
+      
+      **预览（可选）**：
+      ```bash
+      npm run preview
+      # 访问 http://localhost:4173 预览生产版本
+      ```
+
+  - id: code-review
+    name: 代码自查
+    description: 按前端规范自查代码
+    prompt: |
+      前端代码自查清单：
+      
+      **架构合规**：
+      - [ ] 领域类型在 domain/types.ts
+      - [ ] API 实现在 infrastructure/api/
+      - [ ] 组件在 presentation/components/
+      - [ ] 页面在 presentation/pages/
+      - [ ] Hooks 在 presentation/hooks/ 或 shared/hooks/
+      
+      **TypeScript**：
+      - [ ] 严格模式无错误
+      - [ ] Props 定义完整
+      - [ ] 函数返回类型明确
+      
+      **React**：
+      - [ ] 函数式组件 + Hooks
+      - [ ] useCallback 缓存事件
+      - [ ] useMemo 缓存计算
+      - [ ] 无类组件
+      
+      **样式**：
+      - [ ] 使用 Tailwind CSS
+      - [ ] 使用 CSS 变量
+      - [ ] 响应式设计
+      
+      **其他**：
+      - [ ] 无 console.log 遗留
+      - [ ] 导入顺序正确（外部库 → 领域 → 基础设施 → 组件 → 工具）
+      - [ ] 无死代码
+
+  - id: commit
+    name: 提交代码
+    description: 按规范提交 UI 修改
+    prompt: |
+      提交 UI 修改：
+      
+      ```bash
+      cd repo/xxm_fans_frontend
+      
+      git add -A
+      git commit -m "feat(<scope>): <UI 修改描述>
+      
+      - 修改内容 1
+      - 修改内容 2
+      - 响应式适配
+      
+      Screenshots: <如有截图链接>"
+      
+      git push origin <branch>
+      ```
+      
+      **提交信息示例**：
+      ```bash
+      # 新增组件
+      git commit -m "feat(component): add SongCard component
+      
+      - 实现歌曲卡片展示
+      - 支持点击播放
+      - 添加悬停动画效果"
+      
+      # 修改页面
+      git commit -m "feat(page): update HomePage hero section
+      
+      - 重新设计首页 Banner
+      - 添加轮播图功能
+      - 优化移动端显示"
+      
+      # 样式调整
+      git commit -m "style(tailwind): unify button styles
+      
+      - 统一按钮圆角和阴影
+      - 更新主色调 CSS 变量
+      - 修复暗色模式显示"
+      ```
+
+  - id: summary
+    name: 完成总结
+    description: 输出 UI 修改完成摘要
+    prompt: |
+      UI 修改完成！
+      
+      **修改摘要**：
+      - 修改类型：<type>
+      - 目标组件/页面：<target>
+      - 分支：<branch>
+      
+      **实现内容**：
+      - [x] 组件/页面开发
+      - [x] 样式实现
+      - [x] TypeScript 类型检查通过
+      - [x] 生产构建成功
+      - [x] 响应式适配完成
+      
+      **视觉说明**：
+      - 配色方案：使用项目 CSS 变量
+      - 响应式断点：sm(640px), md(768px), lg(1024px), xl(1280px)
+      - 动画效果：如有，说明使用了什么动画
+      
+      **下一步**：
+      1. 创建 Pull Request
+      2. 与设计稿对比确认（如有）
+      3. 与后端联调（如涉及 API）
+      4. 更新 Storybook（如使用）

@@ -1,0 +1,10 @@
+[Unit]
+Description=B站粉丝数爬虫定时器（每小时运行一次）
+
+[Timer]
+OnCalendar=hourly
+Persistent=true
+AccuracySec=1min
+
+[Install]
+WantedBy=timers.target

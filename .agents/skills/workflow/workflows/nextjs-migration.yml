@@ -1,0 +1,486 @@
+---
+name: nextjs-migration
+description: Next.js 迁移项目开发流程（独立开发阶段）
+triggers:
+  - /workflow nextjs
+  - /workflow migration
+  - /workflow nextjs-dev
+---
+
+# Next.js 迁移项目 Workflow
+# 适用于在 repo/xxm_nextjs/ 独立开发，专注于开发阶段，不涉及合并操作
+
+steps:
+  - id: project-context
+    name: 项目背景确认
+    description: 确认当前开发阶段和上下文
+    prompt: |
+      确认 Next.js 迁移项目状态：
+      
+      **项目位置**：
+      - 独立开发目录：`repo/xxm_nextjs/`
+      - 原项目参考：`repo/xxm_fans_frontend/`
+      
+      **当前开发阶段**：
+      请确认当前处于哪个阶段：
+      
+      1. **Phase 1: 初始化** - 项目搭建、基础配置
+      2. **Phase 2: 页面迁移** - 从原项目迁移页面
+      3. **Phase 3: 功能验证** - 确保功能与原项目一致
+      4. **Phase 4: 样式对齐** - 确保样式与原项目一致
+      
+      **架构要求**：
+      - DDD 分层架构（domain/application/infrastructure/presentation/shared）
+      - Next.js 15 + App Router
+      - TypeScript 严格模式
+      - Tailwind CSS
+      
+      **重要约束**：
+      - ⚠️ 所有页面样式必须与原项目保持一致
+      - 使用项目标准配色：`--sage-bg`, `--meadow-green`, `--peach-accent`
+
+  - id: env-setup
+    name: 环境准备
+    description: 确保 Next.js 开发环境就绪
+    prompt: |
+      检查并准备开发环境：
+      
+      ```bash
+      cd /home/yifeianyi/Desktop/xxm_fans_home/repo/xxm_nextjs
+      
+      # 检查 Node.js 版本（需要 18+）
+      node --version
+      
+      # 安装依赖（如未安装）
+      npm install
+      
+      # 检查环境文件
+      ls -la .env.local .env.development 2>/dev/null || echo "需要创建环境文件"
+      ```
+      
+      **环境文件模板**：
+      ```bash
+      # .env.development
+      NEXT_PUBLIC_API_BASE_URL=/api
+      ```
+      
+      **启动开发服务器**：
+      ```bash
+      npm run dev
+      # 访问 http://localhost:3000
+      ```
+      
+      确认：
+      - [ ] 依赖安装完成
+      - [ ] 开发服务器正常启动
+      - [ ] 无编译错误
+
+  - id: architecture-check
+    name: 架构合规检查
+    description: 确认代码符合 DDD 分层架构
+    prompt: |
+      检查代码架构合规性：
+      
+      **目录结构检查**：
+      ```
+      app/
+      ├── domain/              # ✅ 领域层 - 类型和接口
+      ├── application/         # ✅ 应用层 - UseCases
+      ├── infrastructure/      # ✅ 基础设施层 - Repository/Mappers/API
+      ├── presentation/        # ✅ 表现层 - 组件和页面 Hooks
+      ├── shared/              # ✅ 共享层 - 通用工具
+      └── [page]/              # Next.js 页面路由
+      ```
+      
+      **依赖规则检查**：
+      - [ ] Domain 层不依赖任何其他层
+      - [ ] Application 层只依赖 Domain 层
+      - [ ] Infrastructure 层依赖 Domain 层
+      - [ ] Presentation 层依赖 Application/Infrastructure
+      - [ ] 无循环依赖
+      
+      **命名规范检查**：
+      - [ ] Repository 接口：`ISongRepository`
+      - [ ] Repository 实现：`SongRepository`
+      - [ ] UseCase：`GetSongListUseCase`
+      - [ ] Mapper：`SongMapper`
+      - [ ] 组件：`PascalCase`
+      - [ ] Hooks：`camelCase` 以 `use` 开头
+
+  - id: page-migration
+    name: 页面迁移
+    description: 从原项目迁移页面到 Next.js
+    condition: migrating_page
+    prompt: |
+      迁移页面到 Next.js：
+      
+      **迁移前准备**：
+      1. 查看原项目对应页面代码
+         ```bash
+         cd /home/yifeianyi/Desktop/xxm_fans_home/repo/xxm_fans_frontend
+         # 查找对应页面组件
+         find src -name "*<PageName>*" -type f
+         ```
+      
+      2. 创建新页面目录
+         ```bash
+         cd /home/yifeianyi/Desktop/xxm_fans_home/repo/xxm_nextjs
+         mkdir -p app/<page-name>
+         touch app/<page-name>/page.tsx
+         touch app/<page-name>/layout.tsx  # 如需要
+         ```
+      
+      **迁移步骤**：
+      1. **Domain 层** - 创建/更新类型定义
+         - 检查 `app/domain/types.ts`
+         - 添加页面所需的领域类型
+      
+      2. **Infrastructure 层** - 实现数据获取
+         - 创建/更新 Repository 接口（`domain/repositories/`）
+         - 实现 Repository（`infrastructure/repositories/`）
+         - 创建 Mapper（`infrastructure/mappers/`）
+      
+      3. **Application 层** - 实现 UseCase（如需要复杂业务逻辑）
+         - 创建 `application/<feature>/XxxUseCase.ts`
+      
+      4. **Presentation 层** - 创建组件
+         - Server Component: `app/<page>/page.tsx`
+         - Client Component: `app/presentation/components/<feature>/`
+         - Hooks: `app/presentation/hooks/useXxx.ts`
+      
+      **注意事项**：
+      - 优先使用 Server Component
+      - 需要交互的再用 Client Component（`'use client'`）
+      - 使用 Next.js Image 组件优化图片
+      - 使用 Next.js Link 组件优化导航
+      - **样式必须与原项目保持一致**（见下一步样式对齐）
+
+  - id: component-migration
+    name: 组件迁移
+    description: 从原项目迁移组件到 Next.js
+    condition: migrating_component
+    prompt: |
+      迁移组件到 Next.js：
+      
+      **组件分类**：
+      1. **Server Component**（默认）
+      2. **Client Component**（需要 `'use client'`）
+      
+      **判断标准**：
+      | 特性 | Server Component | Client Component |
+      |------|-----------------|------------------|
+      | 直接访问后端 | ✅ | ❌（需 API） |
+      | 使用浏览器 API | ❌ | ✅ |
+      | 使用 React Hooks | ❌ | ✅ |
+      | 使用事件监听 | ❌ | ✅ |
+      
+      **迁移步骤**：
+      1. 分析原组件依赖
+         - 是否使用 `useState`, `useEffect` → Client Component
+         - 是否只负责展示 → Server Component
+      
+      2. 创建组件文件
+         ```bash
+         # Server Component
+         touch app/presentation/components/<ComponentName>/index.tsx
+         
+         # Client Component
+         echo "'use client'" > app/presentation/components/<ComponentName>/index.tsx
+         ```
+      
+      3. 更新导入路径
+         - 原：`import { Song } from '../domain/types'`
+         - 新：`import { Song } from '@/app/domain/types'`
+      
+      4. 适配 Next.js API
+         - `react-router-dom` → `next/navigation`
+         - 图片 `img` → `next/image`
+         - 路由参数通过 props 传递
+
+  - id: style-alignment
+    name: 样式对齐检查
+    description: 确保样式与原项目完全一致
+    prompt: |
+      **⚠️ 关键步骤：样式对齐检查**
+      
+      确保新版页面样式与原项目完全一致：
+      
+      **1. 原项目样式参考**：
+      ```bash
+      cd /home/yifeianyi/Desktop/xxm_fans_home/repo/xxm_fans_frontend
+      
+      # 查看原项目配色
+      grep -r "var(--sage-bg\|var(--meadow-green\|var(--peach-accent" src --include="*.css" --include="*.tsx" | head -20
+      
+      # 查看 Tailwind 类名使用方式
+      grep -r "className=" src/presentation/pages/<PageName>/ --include="*.tsx" | head -10
+      ```
+      
+      **2. 项目标准配色**：
+      | 变量 | 用途 |
+      |------|------|
+      | `--sage-bg` | 主背景色 |
+      | `--meadow-green` | 主色调/品牌色 |
+      | `--peach-accent` | 强调色/高亮 |
+      
+      **3. 样式检查清单**：
+      - [ ] 背景色使用 `bg-[var(--sage-bg)]`
+      - [ ] 主按钮使用 `bg-[var(--meadow-green)]`
+      - [ ] 强调元素使用 `text-[var(--peach-accent)]`
+      - [ ] 响应式断点一致（md:, lg:, xl:）
+      - [ ] 间距（padding/margin）与原项目一致
+      - [ ] 字体大小一致
+      - [ ] 圆角（rounded）风格一致
+      - [ ] 阴影（shadow）风格一致
+      
+      **4. 对比验证**：
+      - [ ] 并排打开原项目和新版项目
+      - [ ] 对比桌面端显示效果
+      - [ ] 对比移动端显示效果
+      - [ ] 检查交互状态（hover, active, focus）
+      
+      **5. 常见样式问题**：
+      - 容器宽度不一致 → 检查 `max-w-*` 或 `w-*`
+      - 间距不一致 → 检查 `p-*`, `m-*`, `gap-*`
+      - 颜色偏差 → 确保使用 CSS 变量而非硬编码
+      - 字体不一致 → 检查 `font-*`, `text-*`
+
+  - id: type-check
+    name: TypeScript 类型检查
+    description: 确保类型安全
+    prompt: |
+      运行类型检查：
+      
+      ```bash
+      cd /home/yifeianyi/Desktop/xxm_fans_home/repo/xxm_nextjs
+      
+      # 类型检查
+      npx tsc --noEmit
+      ```
+      
+      **常见错误处理**：
+      - `Cannot find module '@/app/...'` → 检查 tsconfig.json paths 配置
+      - `Type 'X' is not assignable` → 检查 Domain 类型定义
+      - `Property 'x' does not exist` → 检查 Mapper 转换逻辑
+      
+      **必须修复所有类型错误后才能继续**。
+
+  - id: build-check
+    name: 构建检查
+    description: 验证生产构建
+    prompt: |
+      验证生产构建：
+      
+      ```bash
+      cd /home/yifeianyi/Desktop/xxm_fans_home/repo/xxm_nextjs
+      
+      # 生产构建
+      npm run build
+      ```
+      
+      **检查项**：
+      - [ ] 构建成功无错误
+      - [ ] 无 TypeScript 错误
+      - [ ] 静态生成页面正常（SSG）
+      - [ ] API 路由正常（如有）
+      - [ ] 构建产物大小合理
+      
+      **预览构建结果**：
+      ```bash
+      npm run start
+      # 访问 http://localhost:3000 验证
+      ```
+
+  - id: visual-verification
+    name: 视觉验证
+    description: 与原项目进行视觉对比
+    prompt: |
+      **视觉对比验证**
+      
+      并排对比原项目和新版项目：
+      
+      **1. 启动两个项目**：
+      ```bash
+      # 终端 1：启动新版项目
+      cd /home/yifeianyi/Desktop/xxm_fans_home/repo/xxm_nextjs
+      npm run dev
+      # http://localhost:3000
+      
+      # 终端 2：启动原项目（参考）
+      cd /home/yifeianyi/Desktop/xxm_fans_home/repo/xxm_fans_frontend
+      npm run dev
+      # http://localhost:5173
+      ```
+      
+      **2. 对比检查表**：
+      
+      | 检查项 | 原项目 (localhost:5173) | 新版 (localhost:3000) | 是否一致 |
+      |--------|------------------------|----------------------|----------|
+      | 页面布局 | | | ☐ |
+      | 背景颜色 | | | ☐ |
+      | 文字颜色 | | | ☐ |
+      | 按钮样式 | | | ☐ |
+      | 卡片样式 | | | ☐ |
+      | 间距 | | | ☐ |
+      | 字体大小 | | | ☐ |
+      | 悬停效果 | | | ☐ |
+      | 移动端布局 | | | ☐ |
+      
+      **3. 截图对比**（可选）：
+      - 使用浏览器开发者工具截图
+      - 对比关键页面和组件
+      
+      **所有样式问题必须在提交前修复！**
+
+  - id: commit-to-nextjs
+    name: 提交到 Next.js 仓库
+    description: 在独立仓库中提交代码
+    prompt: |
+      提交到 Next.js 独立仓库：
+      
+      ```bash
+      cd /home/yifeianyi/Desktop/xxm_fans_home/repo/xxm_nextjs
+      
+      # 检查变更
+      git status
+      
+      # 添加所有变更
+      git add -A
+      
+      # 提交（使用 Conventional Commits）
+      git commit -m "feat(<scope>): <描述>
+      
+      - 变更点 1
+      - 变更点 2
+      - 样式与原项目保持一致
+      
+      Related: <如有相关任务编号>"
+      
+      # 推送（如果有远程仓库）
+      git push origin main
+      ```
+      
+      **提交范围示例**：
+      ```bash
+      # 页面迁移
+      git commit -m "feat(pages): migrate songs list page
+      
+      - Implement SongRepository with proper mapping
+      - Create SongTable presentation component
+      - Add server-side data fetching
+      - Align styles with original project"
+      
+      # 组件开发
+      git commit -m "feat(components): add VideoPlayer component
+      
+      - Support bilibili iframe embedding
+      - Add loading state and error handling
+      - Responsive design matching original styles"
+      
+      # 样式调整
+      git commit -m "style(ui): align page styles with original project
+      
+      - Update color variables usage
+      - Fix spacing inconsistencies
+      - Adjust responsive breakpoints"
+      ```
+
+  - id: sync-check
+    name: 与原项目同步检查
+    description: 检查原项目是否有更新需要同步
+    prompt: |
+      检查原项目更新：
+      
+      ```bash
+      # 查看原项目最新提交
+      cd /home/yifeianyi/Desktop/xxm_fans_home/repo/xxm_fans_frontend
+      git log --oneline -10
+      
+      # 对比当前迁移页面是否有变更
+      git diff <上次同步点>..HEAD -- src/presentation/pages/<PageName>/
+      ```
+      
+      **如需同步更新**：
+      1. 分析原项目变更内容
+      2. 在 Next.js 项目中对应修改
+      3. 注意 API 契约是否变化
+      4. **同步后重新进行样式对齐检查**
+      
+      **标记同步点**：
+      ```bash
+      cd /home/yifeianyi/Desktop/xxm_fans_home/repo/xxm_nextjs
+      git tag sync-from-react-$(date +%Y%m%d) -m "Synced from React frontend"
+      ```
+
+  - id: pre-completion
+    name: 完成前检查
+    description: 页面/功能完成前的最终检查
+    prompt: |
+      **完成前最终检查清单**：
+      
+      **功能完整性**：
+      - [ ] 与原项目功能完全一致
+      - [ ] 数据获取正常
+      - [ ] 交互功能正常
+      - [ ] 错误处理完善
+      
+      **样式一致性**：
+      - [ ] 使用项目标准配色变量
+      - [ ] 桌面端样式与原项目一致
+      - [ ] 移动端样式与原项目一致
+      - [ ] 交互状态（hover, focus）一致
+      
+      **代码质量**：
+      - [ ] TypeScript 类型检查通过
+      - [ ] 生产构建成功
+      - [ ] 无 console.log 遗留
+      - [ ] 符合 DDD 架构
+      
+      **文档更新**：
+      - [ ] 更新 TODO.md 进度
+      - [ ] 记录已知问题（如有）
+
+  - id: summary
+    name: 完成总结
+    description: 输出开发完成摘要
+    prompt: |
+      Next.js 迁移项目状态更新！
+      
+      **当前状态**：
+      - 开发目录：`repo/xxm_nextjs/`
+      - 原项目参考：`repo/xxm_fans_frontend/`
+      - 当前阶段：{phase}
+      
+      **已完成**：
+      - [x] 环境准备
+      - [x] 架构合规检查
+      - [x] {completed_tasks}
+      - [x] 样式与原项目保持一致
+      
+      **下一步**：
+      {next_steps}
+      
+      **⚠️ 注意事项**：
+      - 所有页面样式必须与原项目保持一致
+      - 合并到主仓库的操作请在开发完成且经过充分测试后手动执行
+      - 参考文档：`doc/architecture/nextjs-migration-git-workflow.md`
+      
+      **参考文档**：
+      - `doc/architecture/nextjs-migration-git-workflow.md` - Git 工作流指南（合并操作参考）
+      - `repo/xxm_nextjs/ARCHITECTURE.md` - DDD 架构文档
+      - `repo/xxm_nextjs/TODO.md` - 任务清单
+      
+      **快捷命令**：
+      ```bash
+      # 进入项目
+      cd /home/yifeianyi/Desktop/xxm_fans_home/repo/xxm_nextjs
+      
+      # 启动开发
+      npm run dev
+      
+      # 类型检查
+      npx tsc --noEmit
+      
+      # 生产构建
+      npm run build
+      ```

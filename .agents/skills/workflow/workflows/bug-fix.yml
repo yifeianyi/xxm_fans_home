@@ -1,0 +1,201 @@
+---
+name: bug-fix
+description: Bug 修复流程（支持热修复和常规修复）
+triggers:
+  - /workflow bug-fix
+  - /workflow fix
+---
+
+# Bug 修复 Workflow
+# 适用于快速修复生产环境问题或开发中的 Bug
+
+steps:
+  - id: bug-analysis
+    name: Bug 分析
+    description: 分析 Bug 原因和影响范围
+    prompt: |
+      请收集以下 Bug 信息：
+      
+      **基本信息**：
+      1. Bug 描述（什么现象）
+      2. 复现步骤
+      3. 期望行为 vs 实际行为
+      4. 影响范围（用户/功能/数据）
+      
+      **技术信息**：
+      5. 错误日志（如有）
+      6. 涉及的文件/模块
+      7. 是否为回归问题（之前正常）
+      
+      **优先级判断**：
+      - P0（紧急）：生产环境核心功能不可用
+      - P1（高）：重要功能受影响
+      - P2（中）：一般功能问题
+      - P3（低）：轻微问题或优化
+      
+      输出：Bug 分析报告 + 修复策略
+
+  - id: determine-branch-strategy
+    name: 确定分支策略
+    description: 根据 Bug 优先级选择修复策略
+    prompt: |
+      根据优先级选择修复方式：
+      
+      **P0 热修复**（生产环境紧急问题）：
+      ```bash
+      # 从 main 创建 hotfix 分支
+      git checkout main
+      git pull origin main
+      git checkout -b hotfix/<bug-description>
+      ```
+      
+      **P1/P2/P3 常规修复**：
+      ```bash
+      # 从 main 创建 fix 分支
+      git checkout -b fix/<bug-description>
+      ```
+      
+      确认：
+      - [ ] 已选择正确的分支策略
+      - [ ] 已创建并切换到修复分支
+
+  - id: reproduce-bug
+    name: 复现 Bug
+    description: 本地复现确认 Bug 存在
+    prompt: |
+      在修复前，先本地复现 Bug：
+      
+      **复现步骤**：
+      1. 启动开发环境
+         ```bash
+         cd scripts
+         ./dev_start_services.sh
+         ```
+      2. 按照复现步骤操作
+      3. 确认 Bug 现象与报告一致
+      
+      **如果不能复现**：
+      - 检查环境差异（数据/配置/版本）
+      - 与报告人确认复现条件
+      - 查看生产环境日志
+      
+      确认可以复现后再进行修复。
+
+  - id: implement-fix
+    name: 实施修复
+    description: 编写修复代码
+    prompt: |
+      实施 Bug 修复：
+      
+      **修复原则**：
+      1. **最小修改**：只改必要的代码
+      2. **根因修复**：修复根本原因，而非症状
+      3. **无副作用**：确保不引入新问题
+      
+      **修复步骤**：
+      1. 定位问题代码
+      2. 理解代码逻辑
+      3. 编写修复
+      4. 添加/更新测试（如可能）
+      
+      **代码规范**：
+      - 遵循现有代码风格
+      - 添加注释说明修复原因
+      - 复杂修复需说明解决方案
+
+  - id: verify-fix
+    name: 验证修复
+    description: 确认 Bug 已修复且无副作用
+    prompt: |
+      验证修复效果：
+      
+      **功能验证**：
+      - [ ] Bug 复现步骤不再出现 Bug
+      - [ ] 期望行为正常工作
+      - [ ] 边界情况测试通过
+      
+      **回归测试**：
+      - [ ] 相关功能未受影响
+      - [ ] 单元测试通过（如有）
+      - [ ] 手动测试核心流程
+      
+      **如果是 P0 热修复**：
+      - [ ] 生产环境相同场景已验证
+      - [ ] 回滚方案已准备
+
+  - id: commit-fix
+    name: 提交修复
+    description: 按规范提交修复代码
+    prompt: |
+      提交 Bug 修复：
+      
+      **提交信息格式**：
+      ```bash
+      # 常规 Bug 修复
+      git commit -m "fix(<scope>): <简洁描述>
+      
+      - 问题原因：<根因分析>
+      - 解决方案：<修复方法>
+      - 影响范围：<涉及模块>"
+      
+      # 热修复
+      git commit -m "hotfix(<scope>): <简洁描述>
+      
+      紧急修复生产环境问题。
+      
+      - 问题：问题描述
+      - 修复：解决方案
+      - 验证：验证结果"
+      ```
+      
+      **示例**：
+      ```bash
+      git commit -m "fix(api): resolve song search pagination error
+      
+      - 问题原因：page_size 参数未设置默认值
+      - 解决方案：添加默认 page_size=20
+      - 影响范围：歌曲搜索 API"
+      ```
+
+  - id: post-fix-actions
+    name: 修复后处理
+    description: 完成修复后的必要操作
+    prompt: |
+      根据 Bug 级别执行后续操作：
+      
+      **P0 热修复**：
+      - [ ] 立即部署到生产环境
+      - [ ] 监控修复效果
+      - [ ] 通知相关人员
+      - [ ] 创建后续改进任务（如需要）
+      
+      **所有级别**：
+      - [ ] 更新相关文档（如修复涉及接口变更）
+      - [ ] 在 Issue 跟踪系统中更新状态
+      - [ ] 如适用，添加测试用例防止回归
+      
+      **合并策略**：
+      - 热修复：快速审查后立即合并到 main
+      - 常规修复：走正常 PR 流程
+
+  - id: summary
+    name: 修复总结
+    description: 输出修复完成摘要
+    prompt: |
+      Bug 修复完成！
+      
+      **修复摘要**：
+      - Bug 描述：{bug_description}
+      - 根因：{root_cause}
+      - 修复方案：{fix_solution}
+      - 分支：{branch_name}
+      - 优先级：{priority}
+      
+      **验证结果**：
+      - [x] Bug 已修复
+      - [x] 回归测试通过
+      
+      **后续建议**（如有）：
+      - 是否需要添加自动化测试
+      - 是否需要代码重构
+      - 是否需要文档更新

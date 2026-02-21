@@ -1,0 +1,10 @@
+[Unit]
+Description=B站投稿数据爬虫定时器
+
+[Timer]
+# 每小时执行一次
+OnCalendar=hourly
+Persistent=true
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,257 @@
+---
+name: release
+description: 版本发布流程（包含版本号更新、打标签、构建部署）
+triggers:
+  - /workflow release
+  - /workflow publish
+---
+
+# 版本发布 Workflow
+# 适用于正式发布新版本
+
+steps:
+  - id: pre-release-check
+    name: 发布前检查
+    description: 确认发布条件和准备工作
+    prompt: |
+      确认发布条件：
+      
+      **代码状态检查**：
+      - [ ] main 分支代码稳定
+      - [ ] 所有测试通过
+      - [ ] 没有未合并的功能分支
+      - [ ] 子模块引用已更新到最新
+      
+      **文档检查**：
+      - [ ] CHANGELOG.md 已更新
+      - [ ] 版本号确定（遵循语义化版本）
+      - [ ] API 文档已更新（如有变更）
+      
+      **发布信息确认**：
+      1. 版本号（如 v1.2.0）
+      2. 发布类型（major/minor/patch）
+      3. 主要变更内容
+      4. 是否有破坏性变更
+
+  - id: version-update
+    name: 更新版本号
+    description: 在各仓库中更新版本号
+    prompt: |
+      更新项目版本号：
+      
+      **主仓库**：
+      ```bash
+      # 更新版本文件（如存在）
+      # 或更新 package.json / pyproject.toml 等
+      ```
+      
+      **后端版本**：
+      ```bash
+      cd repo/xxm_fans_backend
+      # 更新 settings.py 中的 VERSION
+      # 或更新 __version__ 变量
+      ```
+      
+      **前端版本**：
+      ```bash
+      cd repo/xxm_fans_frontend
+      # 更新 package.json version
+      npm version <new_version> --no-git-tag-version
+      ```
+      
+      **提交版本更新**：
+      ```bash
+      git add -A
+      git commit -m "chore(release): bump version to <version>"
+      ```
+
+  - id: changelog-update
+    name: 更新 CHANGELOG
+    description: 更新变更日志
+    prompt: |
+      更新 CHANGELOG.md：
+      
+      **格式**：
+      ```markdown
+      ## [<version>] - <YYYY-MM-DD>
+      
+      ### Added
+      - 新功能描述
+      
+      ### Changed
+      - 变更描述
+      
+      ### Fixed
+      - 修复描述
+      
+      ### Deprecated
+      - 弃用功能（如有）
+      
+      ### Security
+      - 安全修复（如有）
+      ```
+      
+      **步骤**：
+      1. 查看最新提交记录
+         ```bash
+         git log --oneline --since="上次发布日期"
+         ```
+      2. 按类别整理变更
+      3. 添加日期和版本链接
+      4. 提交 CHANGELOG 更新
+         ```bash
+         git add CHANGELOG.md
+         git commit -m "docs: update changelog for v<version>"
+         ```
+
+  - id: create-tag
+    name: 创建标签
+    description: 为发布版本创建 Git 标签
+    prompt: |
+      创建版本标签：
+      
+      **主仓库标签**：
+      ```bash
+      # 确保在 main 分支且代码最新
+      git checkout main
+      git pull origin main
+      
+      # 创建带注释的标签
+      git tag -a v<version> -m "Release version <version>
+      
+      主要变更：
+      - 变更点 1
+      - 变更点 2
+      
+      详见 CHANGELOG.md"
+      ```
+      
+      **子仓库标签**（可选，如需要）：
+      ```bash
+      cd repo/xxm_fans_backend
+      git tag -a v<version> -m "Backend release v<version>"
+      
+      cd repo/xxm_fans_frontend
+      git tag -a v<version> -m "Frontend release v<version>"
+      ```
+      
+      **推送标签**：
+      ```bash
+      # 推送主仓库标签
+      git push origin v<version>
+      
+      # 推送子仓库标签
+      cd repo/xxm_fans_backend && git push origin v<version>
+      cd repo/xxm_fans_frontend && git push origin v<version>
+      ```
+
+  - id: build-frontend
+    name: 构建前端
+    description: 构建生产环境前端代码
+    prompt: |
+      构建前端生产包：
+      
+      ```bash
+      cd repo/xxm_fans_frontend
+      
+      # 安装依赖（确保干净）
+      npm ci
+      
+      # 类型检查
+      npx tsc --noEmit
+      
+      # 生产构建
+      npm run build
+      
+      # 验证构建结果
+      ls -la dist/
+      ```
+      
+      **检查项**：
+      - [ ] 构建成功无错误
+      - [ ] 构建产物大小合理
+      - [ ] 静态资源路径正确
+
+  - id: collect-static
+    name: 收集静态文件
+    description: 收集 Django 静态文件
+    prompt: |
+      收集后端静态文件：
+      
+      ```bash
+      cd repo/xxm_fans_backend
+      
+      # 激活虚拟环境
+      source venv/bin/activate
+      
+      # 收集静态文件
+      python manage.py collectstatic --noinput
+      
+      # 确认收集成功
+      ls -la staticfiles/
+      ```
+      
+      **注意**：
+      - 确保前端构建产物已被复制到 static/ 目录
+      - 检查是否有遗漏的静态文件
+
+  - id: deploy
+    name: 部署
+    description: 执行部署操作
+    prompt: |
+      根据部署环境选择操作：
+      
+      **生产环境部署**：
+      ```bash
+      # 1. 登录生产服务器
+      ssh user@production-server
+      
+      # 2. 拉取最新代码
+      cd /path/to/project
+      git pull origin main
+      git checkout v<version>
+      
+      # 3. 更新子模块
+      git submodule update --init --recursive
+      
+      # 4. 后端更新
+      cd repo/xxm_fans_backend
+      source venv/bin/activate
+      pip install -r requirements.txt
+      python manage.py migrate
+      python manage.py collectstatic --noinput
+      
+      # 5. 重启服务
+      sudo systemctl restart gunicorn
+      sudo systemctl restart nginx
+      ```
+      
+      **或使用部署脚本**：
+      ```bash
+      cd scripts
+      ./deploy.sh v<version>
+      ```
+
+  - id: post-deploy
+    name: 发布后验证
+    description: 验证部署成功
+    prompt: |
+      验证发布成功：
+      
+      **功能验证**：
+      - [ ] 网站首页可访问
+      - [ ] API 接口正常响应
+      - [ ] 关键功能可用
+      - [ ] 静态资源加载正常
+      
+      **监控检查**：
+      - [ ] 服务器资源使用正常
+      - [ ] 日志无异常错误
+      - [ ] 数据库连接正常
+      
+      **回滚准备**（以防万一）：
+      ```bash
+      # 如需回滚
+      git checkout <previous_version>
+      # 重新执行部署步骤
+      ```

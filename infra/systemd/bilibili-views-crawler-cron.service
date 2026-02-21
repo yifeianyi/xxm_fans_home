@@ -1,0 +1,15 @@
+[Unit]
+Description=B站投稿数据爬虫 (Cron脚本版)
+After=network.target
+
+[Service]
+Type=oneshot
+User=yifeianyi
+WorkingDirectory=/home/yifeianyi/Desktop/xxm_fans_home
+ExecStart=/bin/bash scripts/bilibili_views_cron.sh
+Environment=PYTHONPATH=/home/yifeianyi/Desktop/xxm_fans_home/repo/xxm_fans_backend
+StandardOutput=append:/home/yifeianyi/Desktop/xxm_fans_home/logs/spider/bilibili_views_cron_output.log
+StandardError=append:/home/yifeianyi/Desktop/xxm_fans_home/logs/spider/bilibili_views_cron_error.log
+
+[Install]
+WantedBy=multi-user.target
