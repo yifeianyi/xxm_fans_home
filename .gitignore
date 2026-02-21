@@ -4,3 +4,6 @@ static/*
 logs/*
 data/*
 IFLOW.mdprod_xxm_home.conf
+
+# 生产环境配置（包含敏感信息）
+prod_xxm_home.conf
