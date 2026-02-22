@@ -1,0 +1,156 @@
+name: performance-optimization
+description: 性能优化工作流（列表虚拟滚动、懒加载、缓存等）
+
+steps:
+  - id: 1
+    name: 性能问题分析
+    description: 识别性能瓶颈
+    actions:
+      - 使用 React DevTools Profiler 分析
+      - 识别重复渲染组件
+      - 识别大数据列表
+      - 识别慢接口
+    tools:
+      - React DevTools Profiler
+      - Chrome DevTools Performance
+      - Lighthouse
+
+  - id: 2
+    name: 组件优化
+    description: 优化组件渲染性能
+    actions:
+      - 使用 React.memo 避免不必要渲染
+      - 使用 useMemo 缓存计算结果
+      - 使用 useCallback 缓存函数
+      - 拆分大组件为小组件
+    optimization_patterns:
+      memo: |
+        export const ExpensiveComponent = React.memo(({ data }) => {
+          return <div>{/* 复杂渲染 */}</div>;
+        }, (prev, next) => {
+          return prev.data.id === next.data.id;
+        });
+      
+      use_memo: |
+        const processedData = useMemo(() => {
+          return data.map(item => expensiveOperation(item));
+        }, [data]);
+      
+      use_callback: |
+        const handleClick = useCallback((id: number) => {
+          onSelect(id);
+        }, [onSelect]);
+
+  - id: 3
+    name: 列表虚拟滚动
+    description: 大数据列表使用虚拟滚动
+    actions:
+      - 安装 react-window 或 react-virtualized
+      - 实现虚拟滚动列表
+      - 处理动态高度
+    virtual_scroll: |
+      // 安装: npm install react-window
+      import { FixedSizeList as List } from 'react-window';
+      
+      const Row = ({ index, style }: { index: number; style: React.CSSProperties }) => (
+        <div style={style}>
+          {data[index].name}
+        </div>
+      );
+      
+      <List
+        height={400}
+        itemCount={data.length}
+        itemSize={50}
+        width="100%"
+      >
+        {Row}
+      </List>
+
+  - id: 4
+    name: 分页优化
+    description: 优化大数据分页
+    actions:
+      - 使用分页而非一次性加载
+      - 实现无限滚动加载
+      - 缓存已加载页面数据
+    pagination: |
+      // 无限滚动
+      const [data, setData] = useState<Item[]>([]);
+      const [page, setPage] = useState(1);
+      const [hasMore, setHasMore] = useState(true);
+      
+      const loadMore = useCallback(async () => {
+        const result = await service.getList({ page });
+        setData(prev => [...prev, ...result.data.items]);
+        setHasMore(result.data.items.length > 0);
+        setPage(p => p + 1);
+      }, [page]);
+
+  - id: 5
+    name: 懒加载
+    description: 实现组件和图片懒加载
+    actions:
+      - 路由懒加载
+      - 组件懒加载
+      - 图片懒加载
+    lazy_loading:
+      route: |
+        const SongsPage = lazy(() => import('./pages/Songs'));
+      
+      component: |
+        const HeavyComponent = lazy(() => import('./HeavyComponent'));
+        
+        <Suspense fallback={<Loading />}>
+          <HeavyComponent />
+        </Suspense>
+      
+      image: |
+        <img loading="lazy" src={src} alt={alt} />
+
+  - id: 6
+    name: 数据缓存
+    description: 实现数据缓存策略
+    actions:
+      - 使用 SWR 或 React Query
+      - 实现请求去重
+      - 实现数据预加载
+    caching: |
+      // 使用 SWR
+      import useSWR from 'swr';
+      
+      const { data, error } = useSWR(
+        '/api/songs',
+        fetcher,
+        {
+          revalidateOnFocus: false,
+          dedupingInterval: 2000,
+        }
+      );
+
+  - id: 7
+    name: 代码分割
+    description: 优化打包体积
+    actions:
+      - 路由级别代码分割
+      - 动态导入大库
+      - 配置 Vite 分包
+    code_splitting: |
+      // vite.config.ts
+      build: {
+        rollupOptions: {
+          output: {
+            manualChunks: {
+              'antd-vendor': ['antd', '@ant-design/icons'],
+              'echarts-vendor': ['echarts', 'echarts-for-react'],
+            },
+          },
+        },
+      }
+
+  - id: 8
+    name: 提交优化
+    description: 提交性能优化代码
+    actions:
+      - git add -A
+      - git commit -m "perf: 性能优化"

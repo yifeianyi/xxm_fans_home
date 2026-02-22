@@ -1,0 +1,328 @@
+name: form-development
+description: 表单开发工作流（含校验、动态表单、复杂表单）
+
+steps:
+  - id: 1
+    name: 表单需求分析
+    description: 明确表单类型和功能
+    actions:
+      - 确定表单类型（创建/编辑/搜索/筛选）
+      - 列出所有表单字段
+      - 确定字段类型（输入/选择/日期/上传等）
+      - 确定校验规则
+      - 确定提交方式（立即提交/分步提交）
+    form_types:
+      - create: 创建表单（全字段，必填为主）
+      - edit: 编辑表单（部分可编辑，回显数据）
+      - search: 搜索表单（简单，快速查询）
+      - filter: 筛选表单（多条件组合）
+      - step: 分步表单（向导式，多步骤）
+
+  - id: 2
+    name: 定义表单类型
+    description: 定义表单值的 TypeScript 类型
+    actions:
+      - 在 domain/types 中定义表单类型
+      - 使用 interface 定义字段
+      - 标记可选字段
+    template: |
+      // 创建表单
+      export interface CreateSongForm {
+        name: string;           // 必填
+        originalArtist: string; // 必填
+        language: string;       // 必填
+        styleIds: number[];     // 可选
+        tagIds: number[];       // 可选
+        description?: string;   // 可选
+      }
+      
+      // 编辑表单（通常与创建相同，可能包含 id）
+      export interface UpdateSongForm extends CreateSongForm {
+        id: number;
+      }
+
+  - id: 3
+    name: 表单组件实现
+    description: 使用 Antd Form 实现表单
+    actions:
+      - 使用 Form.useForm 创建表单实例
+      - 定义 initialValues
+      - 实现 onFinish 提交处理
+      - 添加 onFinishFailed 错误处理
+    template: |
+      import { Form, Input, Select, Button, message } from 'antd';
+      import type { CreateSongForm } from '@domain/types';
+      
+      export const SongForm: React.FC<{
+        initialData?: Partial<CreateSongForm>;
+        onSubmit: (values: CreateSongForm) => Promise<void>;
+        loading?: boolean;
+      }> = ({ initialData, onSubmit, loading }) => {
+        const [form] = Form.useForm<CreateSongForm>();
+        
+        const handleSubmit = async (values: CreateSongForm) => {
+          try {
+            await onSubmit(values);
+            message.success('保存成功');
+            if (!initialData) {
+              form.resetFields(); // 创建成功后重置
+            }
+          } catch (error) {
+            message.error(error instanceof Error ? error.message : '保存失败');
+          }
+        };
+        
+        return (
+          <Form
+            form={form}
+            layout="vertical"
+            initialValues={initialData}
+            onFinish={handleSubmit}
+          >
+            {/* 表单字段 */}
+          </Form>
+        );
+      };
+
+  - id: 4
+    name: 添加表单字段
+    description: 实现各个表单字段
+    actions:
+      - 使用 Antd Form.Item 包裹字段
+      - 配置 label 和 name
+      - 添加 rules 校验规则
+      - 选择合适的输入组件
+    field_patterns:
+      text_input: |
+        <Form.Item
+          label="歌曲名称"
+          name="name"
+          rules={[
+            { required: true, message: '请输入歌曲名称' },
+            { max: 100, message: '最多100个字符' },
+          ]}
+        >
+          <Input placeholder="请输入歌曲名称" />
+        </Form.Item>
+      
+      select: |
+        <Form.Item
+          label="语言"
+          name="language"
+          rules={[{ required: true, message: '请选择语言' }]}
+        >
+          <Select placeholder="请选择语言">
+            <Select.Option value="国语">国语</Select.Option>
+            <Select.Option value="粤语">粤语</Select.Option>
+          </Select>
+        </Form.Item>
+      
+      multi_select: |
+        <Form.Item
+          label="曲风"
+          name="styleIds"
+        >
+          <Select mode="multiple" placeholder="请选择曲风">
+            {styles.map(s => (
+              <Select.Option key={s.id} value={s.id}>{s.name}</Select.Option>
+            ))}
+          </Select>
+        </Form.Item>
+      
+      textarea: |
+        <Form.Item
+          label="描述"
+          name="description"
+        >
+          <Input.TextArea rows={4} placeholder="请输入描述" />
+        </Form.Item>
+      
+      date: |
+        <Form.Item
+          label="日期"
+          name="date"
+          rules={[{ required: true, message: '请选择日期' }]}
+        >
+          <DatePicker style={{ width: '100%' }} />
+        </Form.Item>
+      
+      upload: |
+        <Form.Item
+          label="封面"
+          name="cover"
+          valuePropName="fileList"
+          getValueFromEvent={normFile}
+        >
+          <Upload listType="picture-card">
+            <PlusOutlined />
+          </Upload>
+        </Form.Item>
+
+  - id: 5
+    name: 表单校验
+    description: 完善表单校验逻辑
+    actions:
+      - 添加必填校验
+      - 添加格式校验（邮箱、手机号等）
+      - 添加自定义校验
+      - 添加异步校验（如检查名称是否已存在）
+    validation_patterns:
+      required: '{ required: true, message: "请输入xxx" }'
+      max_length: '{ max: 100, message: "最多100个字符" }'
+      min_max: '{ min: 1, max: 100, message: "范围1-100" }'
+      pattern: '{ pattern: /^[a-zA-Z0-9]+$/, message: "只能输入字母和数字" }'
+      email: '{ type: "email", message: "请输入有效的邮箱" }'
+      custom: |
+        {
+          validator: async (_, value) => {
+            if (value && value.length < 5) {
+              throw new Error('至少5个字符');
+            }
+          },
+        }
+      async: |
+        {
+          validator: async (_, value) => {
+            if (value) {
+              const exists = await checkNameExists(value);
+              if (exists) {
+                throw new Error('名称已存在');
+              }
+            }
+          },
+        }
+
+  - id: 6
+    name: 动态表单
+    description: 实现动态增减字段
+    actions:
+      - 使用 Form.List 实现动态字段
+      - 添加添加/删除按钮
+      - 处理动态字段的校验
+    template: |
+      <Form.List name="records">
+        {(fields, { add, remove }) => (
+          <>
+            {fields.map(({ key, name, ...restField }) => (
+              <Space key={key} align="baseline">
+                <Form.Item
+                  {...restField}
+                  name={[name, 'date']}
+                  rules={[{ required: true, message: '请选择日期' }]}
+                >
+                  <DatePicker />
+                </Form.Item>
+                <Form.Item
+                  {...restField}
+                  name={[name, 'note']}
+                >
+                  <Input placeholder="备注" />
+                </Form.Item>
+                <Button type="link" danger onClick={() => remove(name)}>
+                  删除
+                </Button>
+              </Space>
+            ))}
+            <Button type="dashed" onClick={() => add()} block>
+              添加记录
+            </Button>
+          </>
+        )}
+      </Form.List>
+
+  - id: 7
+    name: 表单联动
+    description: 实现字段联动逻辑
+    actions:
+      - 使用 shouldUpdate 监听字段变化
+      - 使用 setFieldsValue 设置关联字段
+      - 使用 dependencies 依赖其他字段
+    linkage_patterns:
+      should_update: |
+        <Form.Item noStyle shouldUpdate={(prev, curr) => prev.type !== curr.type}>
+          {({ getFieldValue }) => {
+            const type = getFieldValue('type');
+            return type === 'other' ? (
+              <Form.Item name="otherType" label="其他类型">
+                <Input />
+              </Form.Item>
+            ) : null;
+          }}
+        </Form.Item>
+      
+      dependencies: |
+        <Form.Item
+          name="confirmPassword"
+          label="确认密码"
+          dependencies={['password']}
+          rules={[
+            { required: true, message: '请确认密码' },
+            ({ getFieldValue }) => ({
+              validator(_, value) {
+                if (!value || getFieldValue('password') === value) {
+                  return Promise.resolve();
+                }
+                return Promise.reject(new Error('两次输入的密码不一致'));
+              },
+            }),
+          ]}
+        >
+          <Input.Password />
+        </Form.Item>
+
+  - id: 8
+    name: 表单提交
+    description: 完善表单提交逻辑
+    actions:
+      - 添加加载状态
+      - 处理提交成功
+      - 处理提交失败
+      - 提交前数据转换
+    submit_pattern: |
+      const handleSubmit = async (values: CreateSongForm) => {
+        setLoading(true);
+        try {
+          // 数据转换（如日期格式化）
+          const payload = {
+            ...values,
+            date: values.date?.format('YYYY-MM-DD'),
+          };
+          
+          if (isEdit) {
+            await songService.updateSong(id, payload);
+          } else {
+            await songService.createSong(payload);
+          }
+          
+          message.success('保存成功');
+          navigate('/songs');
+        } catch (error) {
+          message.error(error instanceof Error ? error.message : '保存失败');
+        } finally {
+          setLoading(false);
+        }
+      };
+
+  - id: 9
+    name: 测试表单
+    description: 验证表单功能
+    actions:
+      - 测试各字段输入
+      - 测试校验规则
+      - 测试提交成功
+      - 测试提交失败
+      - 测试动态字段
+      - 测试字段联动
+
+  - id: 10
+    name: 提交代码
+    description: 提交表单代码
+    actions:
+      - git add -A
+      - git commit -m "feat: 添加 XXX 表单"
+    message_template: |
+      feat: 添加 {form_name} 表单
+      
+      - 支持 {fields}
+      - 添加 {validations} 校验
+      - {features}

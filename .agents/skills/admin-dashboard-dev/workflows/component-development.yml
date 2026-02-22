@@ -1,0 +1,197 @@
+name: component-development
+description: 开发通用组件工作流
+
+steps:
+  - id: 1
+    name: 组件需求分析
+    description: 明确组件的功能和接口
+    actions:
+      - 询问组件类型（表格/表单/弹窗/筛选器/其他）
+      - 明确组件的 Props 接口
+      - 明确组件的事件回调
+      - 确认是否需要在多个页面复用
+    component_types:
+      - table: 数据表格（支持分页、排序、选择）
+      - form: 表单组件（支持校验、动态字段）
+      - modal: 弹窗组件（表单弹窗、确认弹窗）
+      - filter: 筛选组件（搜索、下拉、日期范围）
+      - upload: 上传组件（图片、文件）
+      - editor: 编辑器组件（富文本、Markdown）
+      - chart: 图表组件（ECharts 封装）
+      - other: 其他通用组件
+
+  - id: 2
+    name: 确定组件位置
+    description: 选择组件的存放位置
+    actions:
+      - 如果是通用组件 → src/presentation/components/{type}/
+      - 如果是页面专属组件 → src/presentation/pages/{Page}/components/
+      - 如果是布局组件 → src/presentation/components/layout/
+    directory_structure: |
+      # 通用组件
+      src/presentation/components/tables/DataTable/
+      ├── index.tsx
+      ├── types.ts
+      └── styles.module.css (可选)
+      
+      # 页面专属组件
+      src/presentation/pages/Songs/components/SongFilter/
+      ├── index.tsx
+      └── types.ts
+
+  - id: 3
+    name: 定义 Props 接口
+    description: 定义组件的属性接口
+    actions:
+      - 创建 types.ts 或使用 interface 定义 Props
+      - 定义必填和可选属性
+      - 定义事件回调类型
+    template: |
+      export interface DataTableProps<T> {
+        // 数据
+        data: T[];
+        loading?: boolean;
+        
+        // 列配置
+        columns: ColumnConfig<T>[];
+        
+        // 分页
+        pagination?: PaginationConfig;
+        onPaginationChange?: (pagination: PaginationConfig) => void;
+        
+        // 选择
+        rowSelection?: {
+          selectedRowKeys: React.Key[];
+          onChange: (keys: React.Key[]) => void;
+        };
+        
+        // 操作
+        onRowClick?: (record: T) => void;
+        actions?: (record: T) => React.ReactNode;
+        
+        // 其他
+        className?: string;
+        style?: React.CSSProperties;
+      }
+
+  - id: 4
+    name: 组件实现
+    description: 实现组件功能
+    actions:
+      - 创建组件文件 index.tsx
+      - 使用 React.FC 或普通函数定义组件
+      - 使用 TypeScript 严格类型
+      - 添加默认值和参数解构
+    implementation_rules:
+      - 使用函数组件 + Hooks
+      - Props 使用 interface 定义
+      - 添加 JSDoc 注释说明 Props
+      - 使用 React.memo 优化（大数据列表）
+      - 使用 useCallback 缓存事件处理
+      - 使用 useMemo 缓存计算结果
+    template: |
+      import React, { useCallback, useMemo } from 'react';
+      import type { DataTableProps } from './types';
+      
+      /**
+       * 数据表格组件
+       * @description 支持分页、排序、选择、行操作的通用表格
+       */
+      export const DataTable = React.memo(<T extends Record<string, unknown>>({
+        data,
+        loading = false,
+        columns,
+        pagination,
+        onPaginationChange,
+        rowSelection,
+        onRowClick,
+        actions,
+        className,
+        style,
+      }: DataTableProps<T>) => {
+        // 缓存事件处理
+        const handlePageChange = useCallback((page: number, pageSize: number) => {
+          onPaginationChange?.({ page, pageSize });
+        }, [onPaginationChange]);
+        
+        // 缓存列配置
+        const tableColumns = useMemo(() => {
+          return columns.map(col => ({ ...col }));
+        }, [columns]);
+        
+        return (
+          <Table
+            dataSource={data}
+            columns={tableColumns}
+            loading={loading}
+            pagination={pagination}
+            rowSelection={rowSelection}
+            onRow={onRowClick ? { onClick: (_, record) => onRowClick(record) } : undefined}
+            className={className}
+            style={style}
+          />
+        );
+      });
+      
+      DataTable.displayName = 'DataTable';
+
+  - id: 5
+    name: 添加样式
+    description: 添加组件样式
+    actions:
+      - 优先使用 Ant Design 组件自带样式
+      - 需要自定义时使用 CSS Modules 或 styled-components
+      - 使用 CSS 变量保持一致性
+    styling_options:
+      - 内联样式: style={{ marginTop: 16 }}
+      - CSS Modules: import styles from './styles.module.css'
+      - 全局样式: 在 index.css 中添加
+      - Ant Design: 使用组件的 className 和 style 属性
+
+  - id: 6
+    name: 导出组件
+    description: 在 index.ts 中导出组件
+    actions:
+      - 在组件目录创建 index.ts 导出
+      - 在父级 index.ts 中统一导出
+    export_pattern: |
+      // components/tables/DataTable/index.ts
+      export { DataTable } from './DataTable';
+      export type { DataTableProps } from './types';
+      
+      // components/tables/index.ts
+      export { DataTable } from './DataTable';
+      
+      // components/index.ts
+      export { DataTable } from './tables';
+
+  - id: 7
+    name: 组件测试
+    description: 验证组件功能
+    actions:
+      - 在页面中引入并使用组件
+      - 测试所有 Props 功能
+      - 测试边界情况（空数据、加载中、错误）
+      - 验证 TypeScript 类型提示
+    test_cases:
+      - 正常数据显示
+      - 空数据状态
+      - 加载中状态
+      - 错误状态
+      - 分页切换
+      - 行选择
+      - 排序
+      - 筛选
+
+  - id: 8
+    name: 提交代码
+    description: 提交组件代码
+    actions:
+      - git add -A
+      - git commit -m "feat: 添加 XXX 组件"
+    message_template: |
+      feat: 添加 {component_name} 组件
+      
+      - 支持 {features}
+      - 添加 TypeScript 类型定义
+      - 使用 {optimization} 优化性能

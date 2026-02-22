@@ -1,0 +1,177 @@
+name: api-integration
+description: 对接后端 API 工作流
+
+steps:
+  - id: 1
+    name: 获取 API 文档
+    description: 了解后端 API 接口定义
+    actions:
+      - 询问用户 API 文档位置或接口定义
+      - 确认 API 路径、方法、参数、返回值
+      - 确认是否需要认证（Token）
+    check_list:
+      - API 路径（如 /api/categories）
+      - HTTP 方法（GET/POST/PUT/DELETE）
+      - 请求参数（Query/Body/Path）
+      - 响应数据结构
+      - 错误码定义
+
+  - id: 2
+    name: 分析现有代码
+    description: 查看已有的类型定义和服务
+    actions:
+      - 读取 domain/types/index.ts 查看相关类型
+      - 读取 domain/api/ 查看接口定义
+      - 读取 infrastructure/api/ 查看现有实现
+      - 确定是新建还是修改
+
+  - id: 3
+    name: 定义/更新领域类型
+    description: 在 domain/types/index.ts 中添加类型
+    actions:
+      - 添加实体类型（Entity）
+      - 添加 DTO 类型（Create/Update）
+      - 添加 Filter 类型（筛选参数）
+    patterns:
+      entity: |
+        export interface Category {
+          id: number;
+          name: string;
+          description?: string;
+          createdAt: string;
+          updatedAt: string;
+        }
+      create_dto: |
+        export interface CreateCategoryDTO {
+          name: string;
+          description?: string;
+        }
+      filter: |
+        export interface CategoryFilter {
+          keyword?: string;
+          isActive?: boolean;
+        }
+
+  - id: 4
+    name: 定义服务接口
+    description: 在 domain/api 中定义服务接口
+    actions:
+      - 创建或更新 IXxxService.ts
+      - 根据 API 定义接口方法
+      - 在 index.ts 中导出
+    template: |
+      export interface ICategoryService {
+        // 列表查询（支持筛选和分页）
+        getCategories(
+          filter: CategoryFilter, 
+          pagination: PaginationParams
+        ): Promise<ApiResult<PaginatedResult<Category>>>;
+        
+        // 详情查询
+        getCategoryById(id: number): Promise<ApiResult<Category>>;
+        
+        // 创建
+        createCategory(data: CreateCategoryDTO): Promise<ApiResult<Category>>;
+        
+        // 更新
+        updateCategory(id: number, data: UpdateCategoryDTO): Promise<ApiResult<Category>>;
+        
+        // 删除
+        deleteCategory(id: number): Promise<ApiResult<void>>;
+        
+        // 批量操作（可选）
+        batchDeleteCategories(ids: number[]): Promise<ApiResult<void>>;
+      }
+
+  - id: 5
+    name: 实现服务
+    description: 在 infrastructure/api 中实现服务
+    actions:
+      - 创建或更新 xxxService.ts
+      - 使用 httpClient 调用后端
+      - 处理特殊逻辑（如 URL 参数拼接）
+    implementation_guide: |
+      1. 导入依赖
+         import type { ICategoryService, Category, ... } from '@domain/types';
+         import { httpClient } from './httpClient';
+      
+      2. 定义 Service 类
+         class CategoryService implements ICategoryService {
+           private readonly baseUrl = '/categories';
+           
+           // 实现接口方法...
+         }
+      
+      3. 导出单例
+         export const categoryService = new CategoryService();
+    common_patterns:
+      list_query: |
+        async getCategories(filter, pagination) {
+          return httpClient.get(this.baseUrl, {
+            params: { ...filter, ...pagination }
+          });
+        }
+      detail_query: |
+        async getCategoryById(id) {
+          return httpClient.get(`${this.baseUrl}/${id}`);
+        }
+      create: |
+        async createCategory(data) {
+          return httpClient.post(this.baseUrl, data);
+        }
+      update: |
+        async updateCategory(id, data) {
+          return httpClient.put(`${this.baseUrl}/${id}`, data);
+        }
+      delete: |
+        async deleteCategory(id) {
+          return httpClient.delete(`${this.baseUrl}/${id}`);
+        }
+
+  - id: 6
+    name: 测试 API 对接
+    description: 验证 API 调用是否正常
+    actions:
+      - 在页面中调用 Service 方法
+      - 检查网络请求（浏览器 DevTools）
+      - 验证请求参数和响应数据
+      - 测试错误情况（404/500等）
+    debug_tips:
+      - 打开浏览器 Network 面板查看请求
+      - 检查 Console 是否有错误
+      - 使用 console.log 打印请求参数和响应
+      - 确认 httpClient 拦截器是否正常工作
+
+  - id: 7
+    name: 错误处理完善
+    description: 添加完善的错误处理
+    actions:
+      - 在 Service 层添加错误转换
+      - 在页面层添加错误提示
+      - 处理特殊错误（如网络错误、超时）
+    error_handling: |
+      // 在页面中使用 try-catch
+      try {
+        const result = await categoryService.createCategory(data);
+        message.success('创建成功');
+      } catch (error) {
+        if (error instanceof Error) {
+          message.error(error.message);
+        } else {
+          message.error('操作失败');
+        }
+      }
+
+  - id: 8
+    name: 提交代码
+    description: 提交 API 对接代码
+    actions:
+      - git add -A
+      - git commit -m "feat: 对接 XXX API"
+    message_template: |
+      feat: 对接 {api_name} API
+      
+      - 添加 {entity} 类型定义
+      - 定义 I{Service} 服务接口
+      - 实现 {service} 服务方法
+      - 支持 {features}

@@ -1,0 +1,195 @@
+name: permission-development
+description: 权限控制开发工作流（菜单权限、按钮权限）
+
+steps:
+  - id: 1
+    name: 权限需求分析
+    description: 明确权限控制需求
+    actions:
+      - 确定权限模型（RBAC/ACL）
+      - 确定权限粒度（菜单/页面/按钮/数据）
+      - 确定角色定义
+      - 确定权限存储方式（前端/后端）
+
+  - id: 2
+    name: 类型定义
+    description: 定义权限相关类型
+    actions:
+      - 在 domain/types 中添加权限类型
+      - 定义角色类型
+      - 定义权限检查函数类型
+    types: |
+      export type UserRole = 'SuperAdmin' | 'Admin' | 'Editor' | 'Viewer';
+      
+      export interface Permission {
+        module: string;
+        action: 'create' | 'read' | 'update' | 'delete' | 'manage';
+      }
+      
+      export interface Role {
+        id: number;
+        name: string;
+        permissions: Permission[];
+      }
+
+  - id: 3
+    name: 菜单权限
+    description: 实现菜单级别权限控制
+    actions:
+      - 修改菜单配置，添加权限字段
+      - 根据用户角色过滤菜单
+      - 处理无权限菜单的重定向
+    menu_permission: |
+      // config.ts
+      export const menuItems = [
+        {
+          key: 'users',
+          label: '用户管理',
+          permissions: ['manage'], // 需要 manage 权限
+          roles: ['SuperAdmin'],    // 或特定角色
+        },
+      ];
+      
+      // Sidebar.tsx
+      const filteredMenus = useMemo(() => {
+        return menuItems.filter(item => {
+          if (item.roles) {
+            return item.roles.includes(user.role);
+          }
+          return true;
+        });
+      }, [user.role]);
+
+  - id: 4
+    name: 路由权限
+    description: 实现路由级别权限控制
+    actions:
+      - 在路由配置中添加权限检查
+      - 无权限时重定向到 403 或无权限页面
+      - 处理动态路由权限
+    route_permission: |
+      // router/index.tsx
+      function ProtectedRoute({ requiredRole }: { requiredRole: UserRole }) {
+        const { user } = useAuthStore();
+        
+        if (!user || user.role !== requiredRole) {
+          return <Navigate to="/403" replace />;
+        }
+        
+        return <Outlet />;
+      }
+      
+      // 使用
+      {
+        element: <ProtectedRoute requiredRole="SuperAdmin" />,
+        children: [/* 受保护的路由 */]
+      }
+
+  - id: 5
+    name: 按钮权限
+    description: 实现按钮级别权限控制
+    actions:
+      - 创建权限检查 Hook
+      - 创建权限控制组件
+      - 在页面中使用
+    button_permission: |
+      // stores/authStore.ts
+      checkPermission: (module: string, action: string) => boolean
+      
+      // hooks/usePermission.ts
+      export function usePermission(module: string, action: string) {
+        const { user } = useAuthStore();
+        return user?.role === 'SuperAdmin' || 
+               user?.permissions?.some(p => p.module === module && p.action === action);
+      }
+      
+      // components/PermissionButton.tsx
+      export const PermissionButton: React.FC<{
+        module: string;
+        action: string;
+        children: React.ReactNode;
+      }> = ({ module, action, children }) => {
+        const hasPermission = usePermission(module, action);
+        return hasPermission ? <>{children}</> : null;
+      };
+      
+      // 使用
+      <PermissionButton module="songs" action="create">
+        <Button type="primary">添加歌曲</Button>
+      </PermissionButton>
+
+  - id: 6
+    name: 权限检查工具
+    description: 创建便捷的权限检查工具
+    actions:
+      - 创建 hasPermission 工具函数
+      - 创建 RoleBasedRender 组件
+      - 支持多条件权限检查
+    utilities: |
+      // shared/utils/permission.ts
+      export function hasPermission(
+        user: User,
+        requiredPermission: Permission
+      ): boolean {
+        if (user.role === 'SuperAdmin') return true;
+        return user.permissions?.some(
+          p => p.module === requiredPermission.module && 
+               p.action === requiredPermission.action
+        ) ?? false;
+      }
+      
+      export function hasAnyPermission(
+        user: User,
+        permissions: Permission[]
+      ): boolean {
+        return permissions.some(p => hasPermission(user, p));
+      }
+      
+      export function hasRole(user: User, roles: UserRole[]): boolean {
+        return roles.includes(user.role);
+      }
+
+  - id: 7
+    name: 无权限处理
+    description: 处理无权限情况
+    actions:
+      - 创建 403 无权限页面
+      - 显示无权限提示
+      - 提供申请权限入口
+    fallback: |
+      // 403 页面
+      export default function ForbiddenPage() {
+        return (
+          <Result
+            status="403"
+            title="403"
+            subTitle="抱歉，您没有权限访问此页面"
+            extra={
+              <Button type="primary" onClick={() => navigate('/')}>
+                返回首页
+              </Button>
+            }
+          />
+        );
+      }
+      
+      // 禁用状态的按钮
+      <Tooltip title="无权限">
+        <Button disabled>删除</Button>
+      </Tooltip>
+
+  - id: 8
+    name: 测试权限
+    description: 验证权限控制
+    actions:
+      - 使用不同角色账号测试
+      - 验证菜单显示
+      - 验证页面访问
+      - 验证按钮显示
+
+  - id: 9
+    name: 提交代码
+    description: 提交权限控制代码
+    actions:
+      - git add -A
+      - git commit -m "feat: 添加权限控制"

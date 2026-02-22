@@ -1,0 +1,299 @@
+name: chart-development
+description: 数据可视化/图表开发工作流
+
+steps:
+  - id: 1
+    name: 图表需求分析
+    description: 明确图表类型和数据
+    actions:
+      - 确定图表类型（折线图/柱状图/饼图/散点图/地图等）
+      - 确定数据来源（API接口/实时数据/静态数据）
+      - 确定交互需求（点击/缩放/联动）
+      - 确定刷新频率（静态/定时刷新/实时）
+    chart_types:
+      - line: 折线图（趋势、时序数据）
+      - bar: 柱状图（对比、分类数据）
+      - pie: 饼图（占比、分布）
+      - scatter: 散点图（相关性）
+      - radar: 雷达图（多维对比）
+      - heatmap: 热力图（密度、分布）
+      - funnel: 漏斗图（转化率）
+      - gauge: 仪表盘（单一指标）
+
+  - id: 2
+    name: 准备数据
+    description: 定义图表数据结构
+    actions:
+      - 在 domain/types 中定义图表数据类型
+      - 确定数据转换逻辑
+    data_types: |
+      // 时序数据
+      export interface TimeSeriesData {
+        date: string;
+        value: number;
+      }
+      
+      // 分布数据
+      export interface DistributionData {
+        name: string;
+        value: number;
+      }
+      
+      // 多系列数据
+      export interface MultiSeriesData {
+        category: string;
+        series1: number;
+        series2: number;
+      }
+
+  - id: 3
+    name: 配置图表选项
+    description: 编写 ECharts option 配置
+    actions:
+      - 配置 title、legend、tooltip
+      - 配置 xAxis、yAxis（笛卡尔坐标系）
+      - 配置 series 数据系列
+      - 配置 color、grid 等样式
+    option_template: |
+      import type { EChartsOption } from 'echarts';
+      
+      export const getLineChartOption = (data: TimeSeriesData[]): EChartsOption => ({
+        title: {
+          text: '粉丝数变化趋势',
+          left: 'center',
+        },
+        tooltip: {
+          trigger: 'axis',
+          formatter: '{b}: {c}人',
+        },
+        legend: {
+          data: ['粉丝数'],
+          bottom: 0,
+        },
+        grid: {
+          left: '3%',
+          right: '4%',
+          bottom: '10%',
+          containLabel: true,
+        },
+        xAxis: {
+          type: 'category',
+          boundaryGap: false,
+          data: data.map(d => d.date),
+        },
+        yAxis: {
+          type: 'value',
+          min: 'dataMin',
+        },
+        series: [
+          {
+            name: '粉丝数',
+            type: 'line',
+            smooth: true,
+            data: data.map(d => d.value),
+            areaStyle: {
+              color: {
+                type: 'linear',
+                x: 0, y: 0, x2: 0, y2: 1,
+                colorStops: [
+                  { offset: 0, color: 'rgba(59, 130, 246, 0.3)' },
+                  { offset: 1, color: 'rgba(59, 130, 246, 0.05)' },
+                ],
+              },
+            },
+            itemStyle: {
+              color: '#3b82f6',
+            },
+          },
+        ],
+      });
+
+  - id: 4
+    name: 创建图表组件
+    description: 封装 ECharts 图表组件
+    actions:
+      - 使用 echarts-for-react 组件
+      - 封装通用图表组件
+      - 添加加载状态和空状态
+    component_template: |
+      import ReactECharts from 'echarts-for-react';
+      import type { EChartsOption } from 'echarts';
+      import { Loading } from '../common';
+      
+      interface ChartComponentProps {
+        option: EChartsOption;
+        loading?: boolean;
+        height?: number | string;
+        onChartClick?: (params: unknown) => void;
+      }
+      
+      export const ChartComponent: React.FC<ChartComponentProps> = ({
+        option,
+        loading,
+        height = 300,
+        onChartClick,
+      }) => {
+        if (loading) {
+          return <Loading />;
+        }
+        
+        const handleClick = (params: unknown) => {
+          onChartClick?.(params);
+        };
+        
+        return (
+          <ReactECharts
+            option={option}
+            style={{ height, width: '100%' }}
+            onEvents={{
+              click: handleClick,
+            }}
+          />
+        );
+      };
+
+  - id: 5
+    name: 数据获取
+    description: 从 API 获取图表数据
+    actions:
+      - 在 Service 中添加图表数据接口
+      - 使用 useEffect 获取数据
+      - 处理数据转换
+    data_fetching: |
+      // Service
+      async getFollowerTrend(days: number): Promise<ApiResult<TimeSeriesData[]>> {
+        return httpClient.get('/analytics/follower-trend', { params: { days } });
+      }
+      
+      // Component
+      const [data, setData] = useState<TimeSeriesData[]>([]);
+      const [loading, setLoading] = useState(false);
+      
+      useEffect(() => {
+        const fetchData = async () => {
+          setLoading(true);
+          try {
+            const result = await analyticsService.getFollowerTrend(30);
+            setData(result.data);
+          } finally {
+            setLoading(false);
+          }
+        };
+        fetchData();
+      }, []);
+      
+      const option = useMemo(() => getLineChartOption(data), [data]);
+
+  - id: 6
+    name: 交互功能
+    description: 添加图表交互功能
+    actions:
+      - 添加点击事件
+      - 添加缩放功能
+      - 添加图例切换
+      - 添加数据刷新
+    interactions:
+      click: |
+        const handleChartClick = (params: unknown) => {
+          console.log('Clicked:', params);
+          // 跳转详情页或显示详情弹窗
+        };
+      
+      brush: |
+        brush: {
+          toolbox: ['rect', 'polygon', 'lineX', 'lineY', 'keep', 'clear'],
+        }
+      
+      data_zoom: |
+        dataZoom: [
+          { type: 'inside', start: 0, end: 100 },
+          { type: 'slider', start: 0, end: 100 },
+        ]
+
+  - id: 7
+    name: 响应式适配
+    description: 适配不同屏幕尺寸
+    actions:
+      - 监听窗口大小变化
+      - 自动调整图表尺寸
+      - 移动端适配
+    responsive: |
+      // echarts-for-react 自动处理 resize
+      // 需要确保父容器有明确的宽高
+      
+      // 使用 CSS 媒体查询
+      <div className="chart-container">
+        <ReactECharts option={option} style={{ height: '100%' }} />
+      </div>
+      
+      // CSS
+      .chart-container {
+        height: 300px;
+      }
+      
+      @media (max-width: 768px) {
+        .chart-container {
+          height: 200px;
+        }
+      }
+
+  - id: 8
+    name: 性能优化
+    description: 优化图表性能
+    actions:
+      - 使用 shouldComponentUpdate 或 React.memo
+      - 大数据量使用 dataZoom
+      - 避免频繁 setOption
+      - 使用 appendData 增量更新
+    optimization:
+      memo: |
+        export const ChartComponent = React.memo(({ option }) => {
+          return <ReactECharts option={option} />;
+        }, (prev, next) => {
+          // 自定义比较逻辑
+          return JSON.stringify(prev.option) === JSON.stringify(next.option);
+        });
+      
+      large_data: |
+        // 大数据量配置
+        series: [{
+          type: 'line',
+          sampling: 'lttb', // 降采样策略
+          data: largeData,
+        }]
+
+  - id: 9
+    name: 图表组合
+    description: 组合多个图表
+    actions:
+      - 使用 Row/Col 布局多个图表
+      - 实现图表联动
+      - 使用 connect 关联图表
+    combination: |
+      // 图表联动
+      import { connect } from 'echarts';
+      
+      // 在组件中
+      const chart1Ref = useRef<ReactECharts>(null);
+      const chart2Ref = useRef<ReactECharts>(null);
+      
+      useEffect(() => {
+        if (chart1Ref.current && chart2Ref.current) {
+          const chart1 = chart1Ref.current.getEchartsInstance();
+          const chart2 = chart2Ref.current.getEchartsInstance();
+          connect([chart1, chart2]);
+        }
+      }, []);
+
+  - id: 10
+    name: 提交代码
+    description: 提交图表代码
+    actions:
+      - git add -A
+      - git commit -m "feat: 添加 XXX 图表"
+    message_template: |
+      feat: 添加 {chart_name} 图表
+      
+      - 使用 ECharts {chart_type}
+      - 支持 {features}
+      - 数据来源 {data_source}

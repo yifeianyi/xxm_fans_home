@@ -1,0 +1,155 @@
+name: page-development
+description: 后台管理系统新页面开发工作流
+
+steps:
+  - id: 1
+    name: 需求分析
+    description: |
+      明确页面需求：
+      1. 页面类型（列表页 / 详情页 / 表单页 / 仪表盘）
+      2. 功能需求（CRUD / 筛选 / 导出 / 批量操作）
+      3. 数据来源（哪个 API / 哪个 Service）
+      4. 页面路径和菜单配置
+    actions:
+      - 询问用户页面类型和功能需求
+      - 确认页面路径（如 /songs/categories）
+      - 确认父菜单项
+
+  - id: 2
+    name: 类型定义
+    description: 在 domain/types/index.ts 中添加领域类型
+    actions:
+      - 在 domain/types/index.ts 中添加实体类型（如 Category）
+      - 添加筛选类型（如 CategoryFilter）
+      - 添加 DTO 类型（如 CreateCategoryDTO）
+    check: |
+      - [ ] 类型定义在 domain/types/index.ts
+      - [ ] 类型使用 export 导出
+      - [ ] 类型字段与后端 API 对应
+
+  - id: 3
+    name: 服务接口定义
+    description: 在 domain/api 中定义服务接口
+    actions:
+      - 创建 domain/api/ICategoryService.ts
+      - 定义 CRUD 接口方法
+      - 在 domain/api/index.ts 中导出
+    template: |
+      export interface ICategoryService {
+        getCategories(filter: CategoryFilter, pagination: PaginationParams): Promise<ApiResult<PaginatedResult<Category>>>;
+        getCategoryById(id: number): Promise<ApiResult<Category>>;
+        createCategory(data: CreateCategoryDTO): Promise<ApiResult<Category>>;
+        updateCategory(id: number, data: UpdateCategoryDTO): Promise<ApiResult<Category>>;
+        deleteCategory(id: number): Promise<ApiResult<void>>;
+      }
+
+  - id: 4
+    name: 服务实现
+    description: 在 infrastructure/api 中实现服务
+    actions:
+      - 创建 infrastructure/api/categoryService.ts
+      - 使用 httpClient 调用后端 API
+      - 在 infrastructure/api/index.ts 中导出
+    template: |
+      class CategoryService implements ICategoryService {
+        private readonly baseUrl = '/categories';
+        
+        async getCategories(filter: CategoryFilter, pagination: PaginationParams) {
+          return httpClient.get(this.baseUrl, { params: { ...filter, ...pagination } });
+        }
+        
+        async getCategoryById(id: number) {
+          return httpClient.get(`${this.baseUrl}/${id}`);
+        }
+        
+        async createCategory(data: CreateCategoryDTO) {
+          return httpClient.post(this.baseUrl, data);
+        }
+        
+        async updateCategory(id: number, data: UpdateCategoryDTO) {
+          return httpClient.put(`${this.baseUrl}/${id}`, data);
+        }
+        
+        async deleteCategory(id: number) {
+          return httpClient.delete(`${this.baseUrl}/${id}`);
+        }
+      }
+      
+      export const categoryService = new CategoryService();
+
+  - id: 5
+    name: 路由配置
+    description: 在 router/index.tsx 中添加路由
+    actions:
+      - 导入页面组件
+      - 在路由配置中添加页面路由
+      - 添加路由守卫（如需要特定权限）
+    check: |
+      - [ ] 路由路径与菜单配置一致
+      - [ ] 使用 lazy 懒加载
+      - [ ] 权限控制正确
+
+  - id: 6
+    name: 菜单配置
+    description: 在 infrastructure/config/config.ts 中添加菜单
+    actions:
+      - 在 menuItems 中添加菜单项
+      - 配置 icon（使用 Ant Design Icons）
+      - 配置权限（permissions）
+    template: |
+      {
+        key: 'categories',
+        icon: 'TagsOutlined',
+        label: '分类管理',
+        path: routes.categories,
+        permissions: ['read'],
+      }
+
+  - id: 7
+    name: 页面开发
+    description: 创建页面组件
+    actions:
+      - 创建 src/presentation/pages/Categories/index.tsx
+      - 实现页面功能（列表/表单/详情）
+      - 集成 Service 调用
+      - 添加加载状态和错误处理
+    structure: |
+      src/presentation/pages/Categories/
+      ├── index.tsx           # 主页面
+      ├── components/         # 子组件
+      │   ├── CategoryForm.tsx
+      │   └── CategoryTable.tsx
+      └── hooks/             # 自定义 Hooks
+          └── useCategories.ts
+
+  - id: 8
+    name: 页面测试
+    description: 验证页面功能
+    actions:
+      - 测试页面加载和数据显示
+      - 测试 CRUD 操作
+      - 测试筛选和分页
+      - 测试错误处理
+    check: |
+      - [ ] 页面正常加载无报错
+      - [ ] 数据正确显示
+      - [ ] 创建功能正常
+      - [ ] 更新功能正常
+      - [ ] 删除功能正常
+      - [ ] 筛选功能正常
+      - [ ] 分页功能正常
+      - [ ] 错误提示正确
+
+  - id: 9
+    name: 提交代码
+    description: 提交完成的页面代码
+    actions:
+      - git add -A
+      - git commit -m "feat: 添加 XXX 管理页面"
+    message_template: |
+      feat: 添加 {page_name} 管理页面
+      
+      - 添加 {entity} 类型定义
+      - 实现 {service} 服务
+      - 创建 {page} 页面
+      - 添加路由和菜单配置
