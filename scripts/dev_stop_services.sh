@@ -27,11 +27,11 @@ fi
 
 # 停止主前端
 echo "2.5. 停止主前端服务..."
-if ps aux | grep -v grep | grep -q "next-server.*3000"; then
-    pkill -f "next-server.*3000"
-    echo "   Next.js 前端已停止"
+if ps aux | grep -v grep | grep -q "vite.*5173"; then
+    pkill -f "vite.*5173"
+    echo "   Vite 前端已停止"
 else
-    echo "   Next.js 前端未运行"
+    echo "   Vite 前端未运行"
 fi
 
 # 停止后端

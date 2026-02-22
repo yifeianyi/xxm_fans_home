@@ -28,13 +28,13 @@ fi
 sleep 2
 
 # 启动前端
-echo "2. 启动 Next.js 前端服务..."
+echo "2. 启动 Vite 前端服务..."
 cd /home/yifeianyi/Desktop/xxm_fans_home/repo/xxm_fans_frontend
-if check_running "next-server.*3000"; then
-    echo "   Next.js 前端已在运行"
+if check_running "vite.*5173"; then
+    echo "   Vite 前端已在运行"
 else
     nohup npm run dev > /tmp/frontend.log 2>&1 &
-    echo "   Next.js 前端启动成功 (端口 3000)"
+    echo "   Vite 前端启动成功 (端口 5173)"
 fi
 sleep 3
 
@@ -73,7 +73,7 @@ echo "  - 后端API:           http://localhost:8080/api/"
 echo "  - 媒体文件:          http://localhost:8080/media/"
 echo ""
 echo "直接访问端口："
-echo "  - 主前端(Next.js):   http://localhost:3000/"
+echo "  - 主前端(Vite):      http://localhost:5173/"
 echo "  - 模板化歌单(Vite):  http://localhost:5174/"
 echo "  - 后端(Django):      http://localhost:8000/"
 echo ""
@@ -86,7 +86,7 @@ echo ""
 echo "日志文件："
 echo "  - 后端日志:          /tmp/backend.log"
 echo "  - 前端日志:          /tmp/frontend.log"
-echo "  - 注意: 主前端已迁移到 Next.js (端口 3000)"
+echo "  - 注意: 主前端使用 Vite (端口 5173)"
 echo "  - 歌单日志:          /tmp/songlist_frontend.log"
 echo "  - Nginx日志:         /tmp/nginx/"
 echo ""
