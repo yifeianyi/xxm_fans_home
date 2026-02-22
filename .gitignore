@@ -7,3 +7,7 @@ IFLOW.mdprod_xxm_home.conf
 
 # 生产环境配置（包含敏感信息）
 prod_xxm_home.conf
+
+# 生产环境配置（敏感信息）
+.agents/skills/prod-env-connect/config.yaml
+.agents/skills/prod-env-connect/
