@@ -89,6 +89,33 @@ const observer = new IntersectionObserver((entries) => {
 });
 ```
 
+### 2.3 分支嫁接 (2026-02-22)
+**原因**: Next.js 迁移提交需要与 v2.0 稳定版本分离，以便各自独立演进
+
+**操作内容**:
+- 创建 `archive/nextjs-migration` 分支保存所有 Next.js 迁移提交（69个提交）
+- 将 `main` 分支重置到 `v2.0` 标签（Vite 稳定版本）
+- 强制推送到远程，确保主分支保持干净稳定
+
+**分支结构**:
+```
+v2.0 (4ef92d0) ──┬──> main (Vite 稳定版本) ──> origin/main
+                 │
+                 └──> archive/nextjs-migration ──> origin/archive/nextjs-migration
+                      (Next.js 迁移提交已备份)
+```
+
+**后续恢复方法**:
+```bash
+cd repo/xxm_fans_frontend
+git checkout main
+git merge archive/nextjs-migration
+# 更新主项目子模块引用
+cd ../..
+git add repo/xxm_fans_frontend
+git commit -m "chore: 恢复 Next.js 迁移分支"
+```
+
 ---
 
 ## 3. 已知问题与解决方案
@@ -211,11 +238,18 @@ xxm_fans_home/
 
 ### 8.2 长期规划
 1. **Next.js 迁移评估**: 
-   - 当前 v2.0 (Vite) 稳定运行
-   - 如需再次迁移到 Next.js，建议：
+   - 当前 v2.0 (Vite) 稳定运行，Next.js 迁移提交已保存到 `archive/nextjs-migration` 分支
+   - 如需恢复 Next.js 迁移，执行：
+     ```bash
+     cd repo/xxm_fans_frontend
+     git checkout main
+     git merge archive/nextjs-migration
+     ```
+   - 重新迁移建议：
      - 先在测试环境完整验证
      - 确保 standalone 构建产物完整
      - 准备完整的回滚方案
+     - 解决 React 19 与 Vite 代码分割的兼容性问题
 
 2. **性能优化**:
    - 添加 Service Worker 缓存
@@ -237,5 +271,57 @@ xxm_fans_home/
 
 ---
 
+## 10. 分支管理
+
+### 10.1 前端仓库分支状态
+
+| 分支 | 位置 | 说明 |
+|------|------|------|
+| `main` | `4ef92d0` | Vite v2.0 稳定版本，当前生产环境使用 |
+| `archive/nextjs-migration` | `a9c2e9f` | Next.js 16 迁移版本（69个提交），已存档 |
+| `origin/main` | `4ef92d0` | 与本地 main 同步 |
+| `origin/archive/nextjs-migration` | `a9c2e9f` | 云端备份 |
+
+### 10.2 分支历史
+
+**v2.0 之前的提交** (共同祖先):
+- Vite + React 18 稳定版本基础
+
+**v2.0 到 嫁接点之间**:
+- 合并到 `archive/nextjs-migration` 的 Next.js 迁移提交
+- 包含 DDD 架构、页面迁移、性能优化等 69 个提交
+
+**嫁接后**:
+- `main` 保持纯净 v2.0 状态
+- `archive/nextjs-migration` 保存完整迁移历史
+
+### 10.3 切换分支操作
+
+**切换到 Vite 稳定版本 (当前 main)**:
+```bash
+cd repo/xxm_fans_frontend
+git checkout main
+git pull origin main
+```
+
+**切换到 Next.js 存档版本**:
+```bash
+cd repo/xxm_fans_frontend
+git checkout archive/nextjs-migration
+```
+
+**恢复 Next.js 到 main**:
+```bash
+cd repo/xxm_fans_frontend
+git checkout main
+git merge archive/nextjs-migration
+# 处理可能的冲突
+cd ../..
+git add repo/xxm_fans_frontend
+git commit -m "chore: 恢复 Next.js 迁移分支"
+```
+
+---
+
 **记录人**: AI Assistant  
-**更新时间**: 2026-02-22 12:25
+**更新时间**: 2026-02-22 12:41
