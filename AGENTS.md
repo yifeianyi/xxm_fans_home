@@ -32,6 +32,16 @@
 
 > **注意**: 2026-02-22 完成从 Vite 到 Next.js 的迁移，实现 SSR/SSG 优化和更好的 SEO 支持。
 
+### 后台管理系统 (xxm_fans_admin)
+- **框架**: React 18 + TypeScript 5.8
+- **构建工具**: Vite 6
+- **UI组件库**: Ant Design 5.x
+- **状态管理**: Zustand 5
+- **图表库**: ECharts + react-echarts
+- **路由**: React Router 7
+- **架构**: DDD（领域驱动设计）
+- **文档**: [README.md](./repo/xxm_fans_admin/README.md)
+
 ### 模板化歌单前端 (TempSongListFrontend)
 - **框架**: Vue 3.2 + Element Plus 2.0
 - **构建工具**: Vite 4.0
@@ -76,6 +86,7 @@ xxm_fans_home/
 ├── repo/                     # 代码仓库（Git子模块）
 │   ├── xxm_fans_backend/    # Django后端项目
 │   ├── xxm_fans_frontend/   # React前端项目
+│   ├── xxm_fans_admin/      # React后台管理系统
 │   └── TempSongListFrontend/ # Vue模板化歌单前端
 ├── scripts/                  # 部署和工具脚本
 ├── spider/                   # 爬虫目录
@@ -102,10 +113,11 @@ cd /home/yifeianyi/Desktop/xxm_fans_home/scripts
 ./dev_start_services.sh
 
 # 3. 访问应用
-# 主前端:     http://localhost:8080/
-# 模板化歌单: http://localhost:8080/songlist/
-# 后端API:    http://localhost:8080/api/
-# Admin:      http://localhost:8080/admin/
+# 主前端:       http://localhost:8080/
+# 模板化歌单:   http://localhost:8080/songlist/
+# 后端API:      http://localhost:8080/api/
+# Admin:        http://localhost:8080/admin/
+# 后台管理系统: http://localhost:5175/ (独立运行)
 
 # 4. 停止服务
 ./dev_stop_services.sh
@@ -170,6 +182,28 @@ npm run build
 # 通过 URL 参数访问不同歌手
 # http://localhost:5174?artist=youyou
 # http://localhost:5174?artist=bingjie
+```
+
+### 后台管理系统
+
+```bash
+cd /home/yifeianyi/Desktop/xxm_fans_home/repo/xxm_fans_admin
+
+# 安装依赖
+npm install
+
+# 开发环境
+npm run dev                # http://localhost:5175
+
+# 构建
+npm run build              # 生产构建
+npm run build:dev          # 开发构建
+npm run preview            # 预览生产构建
+
+# 代码检查
+npm run lint
+npm run lint:fix
+npm run type-check
 ```
 
 ### 性能测试
@@ -329,9 +363,9 @@ cd /home/yifeianyi/Desktop/xxm_fans_home/repo/xxm_fans_backend/test
 - 大数据列表使用 `React.memo` 优化重渲染
 
 **Next.js 规范**:
-- 优先使用 Next.js `<Image>` 组件，但静态资源（Nginx 提供）使用原生 `<img>`
-- 原生 `<img>` 必须添加 `// eslint-disable-next-line @next/next/no-img-element`
+- 使用原生 `<img>` 标签加载图片
 - 图片优化属性：`loading`, `fetchPriority`, `decoding`
+- 静态资源由 Nginx 直接提供
 - 使用 App Router，页面放在 `app/` 目录下
 - API 路由在 `app/api/` 或后端提供
 - 环境变量使用 `NEXT_PUBLIC_` 前缀（客户端可访问）
@@ -430,7 +464,7 @@ NEXT_PUBLIC_API_BASE_URL=/api
 INTERNAL_API_BASE_URL=http://localhost:8000/api
 ```
 
-> **迁移说明**: Vite 使用 `VITE_` 前缀，Next.js 使用 `NEXT_PUBLIC_` 前缀。`INTERNAL_API_BASE_URL` 用于服务端渲染时访问后端 API。
+> **环境变量说明**: Vite 使用 `VITE_` 前缀，只有以 `VITE_` 开头的变量才会暴露给客户端代码。
 
 ---
 
@@ -575,6 +609,7 @@ systemctl list-timers --all | grep bilibili
 11. **AI Agent 技能**: 内置自定义技能模块，支持 B站工具、UI优化等
 12. **Next.js SSR/SSG**: 服务端渲染优化 SEO，更好的搜索引擎收录
 13. **前端性能优化**: React.memo、图片懒加载、骨架屏、虚拟滚动准备
+14. **后台管理系统**: React + Ant Design + DDD架构的现代化后台管理界面，支持完整的CRUD操作和数据可视化
 
 ---
 
@@ -623,13 +658,6 @@ systemctl list-timers --all | grep bilibili
 
 ## 常见问题 (FAQ)
 
-### Q: Next.js standalone 部署后静态资源 404
-**A**: standalone 输出默认不包含 `public` 目录，需要手动复制：
-```bash
-cp -r public .next/standalone/
-```
-或使用 `scripts/build-frontend.sh` 脚本。
-
 ### Q: 歌曲页面滚动卡顿
 **A**: 已优化：
 1. 每页数量从 50 减少到 20
@@ -656,6 +684,7 @@ cp -r public .next/standalone/
 - `README.md` - 项目说明文档
 - `repo/xxm_fans_frontend/AGENTS.md` - 前端开发规范
 - `repo/xxm_fans_backend/IFLOW.md` - 后端技术文档
+- `repo/xxm_fans_admin/README.md` - 后台管理系统文档
 - `spider/TIERED_CRAWLER_README.md` - 分层爬虫文档
 - `spider/README.md` - 爬虫使用文档
 - `scripts/AUTO_SYNC_GALLERY_README.md` - 图集同步文档
@@ -667,4 +696,6 @@ cp -r public .next/standalone/
 
 | 日期 | 更新内容 |
 |-----|---------|
+| 2026-02-23 | 创建后台管理系统 `xxm_fans_admin`：React 18 + Ant Design + DDD架构，包含10个功能模块 |
 | 2026-02-12 | 更新爬虫系统文档，添加分层爬虫说明；更新前端架构描述；添加 AI Agent 技能模块说明 |
+| 2026-02-24 | 修正前端技术栈描述：主前端使用 Vite + React，非 Next.js |
