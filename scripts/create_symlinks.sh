@@ -47,4 +47,28 @@ else
     echo "✓ 二创图片资源软链接已存在"
 fi
 
+# 3. 后端 MEDIA_ROOT 软链接（确保上传文件保存到正确位置）
+echo "创建后端 MEDIA_ROOT 软链接..."
+
+BACKEND_MEDIA="$PROJECT_ROOT/repo/xxm_fans_backend/media"
+TARGET_MEDIA="$PROJECT_ROOT/media"
+
+if [ -e "$BACKEND_MEDIA" ]; then
+    if [ -L "$BACKEND_MEDIA" ]; then
+        echo "✓ 后端 media 软链接已存在"
+    else
+        # 备份真实目录中的文件到目标位置
+        echo "发现后端 media 真实目录，正在迁移文件..."
+        if [ -d "$BACKEND_MEDIA" ]; then
+            cp -r "$BACKEND_MEDIA"/* "$TARGET_MEDIA"/ 2>/dev/null || true
+            rm -rf "$BACKEND_MEDIA"
+            ln -s "$TARGET_MEDIA" "$BACKEND_MEDIA"
+            echo "✓ 后端 media 软链接创建成功（文件已迁移）"
+        fi
+    fi
+else
+    ln -s "$TARGET_MEDIA" "$BACKEND_MEDIA"
+    echo "✓ 后端 media 软链接创建成功"
+fi
+
 echo "所有软链接创建完成！"
