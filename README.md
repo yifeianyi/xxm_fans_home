@@ -378,6 +378,7 @@ ARTIST_CONFIG = {
     'artist2': '艺术家名称2',
 }
 ```
+- **部署指南**: [添加新歌手完整部署指南](doc/songlist/添加新歌手完整部署指南.md)
 
 #### 8. core - 核心共享模块
 - **cache.py**: 缓存管理工具
@@ -852,6 +853,7 @@ export DJANGO_ALLOWED_HOSTS='your-domain.com'
 - `数据库SQLite到MySQL迁移方案.md` - 数据库迁移方案
 - `gallery/` - 图集功能文档
 - `songlist/` - 模板化歌单文档
+  - `添加新歌手完整部署指南.md` - 新歌手部署全流程文档
 - `feature/` - 功能文档
 
 ### 爬虫文档（位于 spider/）
