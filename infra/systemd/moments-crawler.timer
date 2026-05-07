@@ -1,0 +1,11 @@
+[Unit]
+Description=满の动态爬虫定时器（每5分钟）
+Documentation=https://github.com/xxm-fans/xxm_fans_home
+
+[Timer]
+OnCalendar=*-*-* *:0/5:00
+OnBootSec=1min
+Persistent=true
+
+[Install]
+WantedBy=timers.target
