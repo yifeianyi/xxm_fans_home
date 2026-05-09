@@ -4,18 +4,18 @@
 # 每5分钟爬取咻咻满的微博和B站动态增量内容
 # ============================================================================
 
-PROJECT_ROOT="/home/yifeianyi/Desktop/xxm_fans_home"
+# 自动检测项目根目录（脚本所在目录的上级）
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 CRAWLER_SCRIPT="${PROJECT_ROOT}/spider/crawl_moments.py"
-VENV_PATH="/home/yifeianyi/Desktop/myenv"
+
+# 如果存在与项目根平级的 venv 则激活
+VENV_PATH="${PROJECT_ROOT}/../venv/bin/activate"
+if [ -f "$VENV_PATH" ]; then
+    source "$VENV_PATH"
+fi
 
 mkdir -p "${PROJECT_ROOT}/logs"
-
-if [ -d "$VENV_PATH" ]; then
-    source "$VENV_PATH/bin/activate"
-    PYTHON_CMD="python"
-else
-    PYTHON_CMD="python3"
-fi
 
 if [ ! -f "$CRAWLER_SCRIPT" ]; then
     echo "错误: 找不到爬虫脚本: $CRAWLER_SCRIPT"
@@ -23,7 +23,7 @@ if [ ! -f "$CRAWLER_SCRIPT" ]; then
 fi
 
 cd "$PROJECT_ROOT"
-$PYTHON_CMD "$CRAWLER_SCRIPT" 2>&1
+python "$CRAWLER_SCRIPT" 2>&1
 EXIT_CODE=$?
 
 exit $EXIT_CODE

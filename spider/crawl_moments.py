@@ -30,11 +30,11 @@ from moments.services.image_service import ImageService
 class BilibiliDynamicCrawler:
     """B站动态爬取器"""
 
-    BILIBILI_UID = '37754047'
     API_URL = 'https://api.bilibili.com/x/polymer/web-dynamic/v1/feed/space'
     TIMEOUT = 15
 
     def __init__(self):
+        self.bilibili_uid = os.environ.get('BILIBILI_UID', '37754047')
         self.session = requests.Session()
         self.session.headers.update({
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
@@ -48,11 +48,11 @@ class BilibiliDynamicCrawler:
     def fetch_dynamics(self, cookie_string=None):
         """获取用户动态列表"""
         if cookie_string:
-            self.session.headers['Cookie'] = cookie_string
+            self.session.cookies.set('Cookie', cookie_string, domain='.bilibili.com')
 
         try:
             params = {
-                'host_mid': self.BILIBILI_UID,
+                'host_mid': self.bilibili_uid,
                 'offset': '',
                 'timezone_offset': '-480',
             }
@@ -93,7 +93,10 @@ class BilibiliDynamicCrawler:
 
                 pub_ts = module_author.get('pub_ts')
                 if pub_ts is not None:
-                    pub_time = datetime.fromtimestamp(int(pub_ts))
+                    ts = int(pub_ts)
+                    if ts > 1e12:
+                        ts = ts // 1000
+                    pub_time = datetime.fromtimestamp(ts)
                 else:
                     pub_time = datetime.now()
 
@@ -171,29 +174,29 @@ class BilibiliDynamicCrawler:
 class WeiboDynamicCrawler:
     """微博动态爬取器（requests API方式）"""
 
-    WEIBO_UID = '5704967686'
     API_URL = 'https://m.weibo.cn/api/container/getIndex'
     TIMEOUT = 15
 
     def __init__(self):
+        self.weibo_uid = os.environ.get('WEIBO_UID', '5704967686')
         self.session = requests.Session()
         self.session.headers.update({
             'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X) '
                           'AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/604.1',
             'Accept': 'application/json, text/plain, */*',
-            'Referer': f'https://m.weibo.cn/u/{self.WEIBO_UID}',
+            'Referer': f'https://m.weibo.cn/u/{self.weibo_uid}',
         })
 
     def fetch_dynamics(self, cookie_string=None, max_pages=3):
         """获取微博动态"""
         if cookie_string:
-            self.session.headers['Cookie'] = cookie_string
+            self.session.cookies.set('Cookie', cookie_string, domain='.weibo.cn')
 
         try:
             params = {
                 'type': 'uid',
-                'value': self.WEIBO_UID,
-                'containerid': f'107603{self.WEIBO_UID}',
+                'value': self.weibo_uid,
+                'containerid': f'107603{self.weibo_uid}',
             }
 
             all_posts = []
@@ -246,7 +249,7 @@ class WeiboDynamicCrawler:
 
                 created_at = mblog.get('created_at', '')
                 try:
-                    pub_time = datetime.strptime(created_at, '%a %b %d %H:%M:%S +0800 %Y')
+                    pub_time = datetime.strptime(created_at, '%a %b %d %H:%M:%S %z %Y')
                 except (ValueError, TypeError):
                     pub_time = datetime.now()
 

@@ -3,6 +3,9 @@
 """
 B站动态监测测试 Demo - API版本
 使用requests直接调用B站API获取用户动态
+
+⚠️  此文件为独立 Demo / 调试工具，不集成数据库。
+    生产环境的定时爬取请使用 spider/crawl_moments.py。
 """
 
 import json
